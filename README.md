@@ -21,6 +21,9 @@ Peresvet:
 2. Make object hierarchy. Every object may have tag set.
    This hierarchy is build on LDAP server
 3. Use websockets
-4. RabbitMQ
-5. Not only read data over connector, but write it also. User can control devices over WebUI.
+4. Not only read data over connector, but write it also. User can control devices over WebUI.
+5. Calculated tags
+6. External method calls
+7. Alerts
+8. RabbitMQ
 
