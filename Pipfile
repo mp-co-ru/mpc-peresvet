@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 sphinx-rtd-theme = "*"
+requests = "*"
 
 [requires]
 python_version = "3.9"
