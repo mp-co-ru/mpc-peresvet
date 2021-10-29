@@ -47,6 +47,8 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Тестовый пример</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#victoriametrics">Настройка Victoriametrics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Тестовый скрипт</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#grafana">Настройка Grafana</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="administration.html">Administration</a></li>
@@ -108,6 +110,27 @@
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ sudo snap restart victoriametrics
 </pre></div>
 </div>
+<p>Теперь Victoriametrics будет работать по протоколу OpenTSDB по порту 4242.</p>
+</section>
+<section id="id2">
+<h2>Тестовый скрипт<a class="headerlink" href="#id2" title="Ссылка на этот заголовок"></a></h2>
+<p>Для тестовой записи одной метрики есть скрипт <code class="docutils literal notranslate"><span class="pre">test_writer.py</span></code>.
+Запускаем его на исполнение:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ python3 test_writer.py <span class="nv">h</span><span class="o">=</span>localhost:4242 <span class="nv">m</span><span class="o">=</span>temp <span class="nv">f</span><span class="o">=</span><span class="m">2</span>
+</pre></div>
+</div>
+<p>Скрипт можно запускать и без ключей, в этом случае в качестве значений по умолчанию будут приняты указанные выше.
+Ключи указывают, что запись будет вестить на локальный сервер, имя метрики - temp, частота записи значений - раз в две секунды.
+Скрипт в каждом цикле случайным образом выбирает значение от -10 до 10 и записывает его в указанную метрику.</p>
+</section>
+<section id="grafana">
+<h2>Настройка Grafana<a class="headerlink" href="#grafana" title="Ссылка на этот заголовок"></a></h2>
+<p>Теперь осталось создать панель в Grafan’е, на которой мы будем смотреть на нашу метрику.</p>
+<ol class="arabic">
+<li><p>Создадим источник данных:</p>
+<img alt="_images/ds_1.png" src="_images/ds_1.png" />
+</li>
+</ol>
 </section>
 </section>
 
