@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+sphinx-rtd-theme = "*"
+requests = "*"
+
+[requires]
+python_version = "3.9"
+
+[dev-packages]
+pylint = "*"
+pytest = "*"
+coverage = "*"
+pytest-cov = "*"
+sphinx = "*"
+astunparse = "*"
+sphinxcontrib-httpdomain = "*"
+sphinxcontrib-httpexample = "*"
+sphinx-rtd-theme = "*"
+doc8="*"
