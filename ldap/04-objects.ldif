@@ -1,0 +1,71 @@
+# add root object of our DIT
+dn: cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This is root node of Peresvet hierarchy
+cn: prs
+uniqueIdentifier: 54fe518b-233a-4e93-aa3e-dcacc747a8a2
+
+# add dataStorages node
+dn: cn=dataStorages,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores data storages
+cn: dataStorages
+uniqueIdentifier: fbb095f7-5617-4340-9dd9-d19bc414eb47
+
+# add dataSources node
+dn: cn=dataSources,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores data sources
+cn: dataSources
+uniqueIdentifier: 599da57a-8ebf-4ddb-b6bb-70c271b57836
+
+# add templates node
+dn: cn=templates,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores equipment templates
+cn: templates
+uniqueIdentifier: 2588e606-51e2-4485-875a-7ad5849e0380
+
+# add schedules node
+dn: cn=schedules,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores equipment templates
+cn: schedules
+uniqueIdentifier: bd58c916-7f8e-47fa-8d4b-2a847ec6820b
+
+# add objects node
+dn: cn=objects,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores real objects
+cn: objects
+uniqueIdentifier: 153d3a8d-4f45-4e06-b5cc-6da83fcd81ed
+
+# add consts node
+dn: cn=consts,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores constants
+cn: consts
+uniqueIdentifier: 739b2277-a745-4071-98e3-427e2cdb83d2
+
+# add tags node
+dn: cn=tags,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores tags
+cn: tags
+uniqueIdentifier: 3c5b4cd3-9032-4095-9f6d-e6c1bf77bf89
+
+# add methodss node
+dn: cn=methods,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: This node stores methods
+cn: methods
+uniqueIdentifier: bad906c2-bc83-48b7-bd5b-aa4e269a5766
