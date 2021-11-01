@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 sphinx-rtd-theme = "*"
 requests = "*"
+docker-compose = "*"
 
 [requires]
 python_version = "3.9"
