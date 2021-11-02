@@ -31,3 +31,9 @@ services:
       - 8428:8428
     volumes:
       - ./vm-data:/victoria-metrics-data
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - 3000:3000
