@@ -13,6 +13,10 @@ services:
     depends_on:
       - ldap
       - victoriametrics
+    environment:
+      LDAP_URI: ${LDAP_URI}
+      LDAP_USER: ${LDAP_USER}
+      LDAP_PASSWORD: ${LDAP_PASSWORD}
 
   ldap:
     build:
