@@ -1,7 +1,7 @@
 version: '3.9'
 
 services:
-  web:
+  peresvet:
     build: 
       context: .
       dockerfile: Docker/Dockerfile.peresvet
@@ -10,6 +10,9 @@ services:
       - ./src/:/usr/src/app/
     ports:
       - 8002:8000
+    depends_on:
+      - ldap
+      - victoriametrics
 
   ldap:
     build:
@@ -20,3 +23,11 @@ services:
       - 389:389
       - 636:636
   
+  victoriametrics:
+    image: victoriametrics/victoria-metrics
+    container_name: vm
+    restart: always
+    ports:
+      - 8428:8428
+    volumes:
+      - ./vm-data:/victoria-metrics-data
