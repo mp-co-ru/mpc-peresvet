@@ -16,4 +16,7 @@ services:
       context: .
       dockerfile: Docker/Dockerfile.ldap
     restart: always
+    ports:
+      - 389:389
+      - 636:636
   
