@@ -1,0 +1,15 @@
+dn: cn=config
+objectClass: olcGlobal
+cn: config
+olcPidFile: /var/run/slapd/slapd.pid
+olcLogLevel: 0
+
+dn: olcDatabase={0}config,cn=config
+objectClass: olcDatabaseConfig
+olcDatabase: {0}config
+olcRootDN: cn=admin,cn=config
+olcRootPW: {SSHA}9WEKDhlyDVOlLTnKhagWdwxX9lQmUBYt
+
+dn: cn=schema,cn=config
+objectClass: olcSchemaConfig
+cn: schema
