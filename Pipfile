@@ -7,6 +7,9 @@ name = "pypi"
 sphinx-rtd-theme = "*"
 requests = "*"
 docker-compose = "*"
+fastapi = "*"
+ldap3 = "*"
+uvicorn = "*"
 
 [requires]
 python_version = "3.9"
