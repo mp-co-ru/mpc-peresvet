@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-
 from app.api import tags
 
 app = FastAPI()

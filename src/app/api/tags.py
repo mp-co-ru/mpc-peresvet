@@ -1,12 +1,11 @@
 from fastapi import APIRouter
-from fastapi.logger import logger
+from fastapi import Request
 
 router = APIRouter()
 
 @router.get("/tags")
-async def pong():
+async def pong(req: Request):
     # some async operation could happen here
     # example: `notes = await get_all_notes()`
-    logger.info("Houston, we have a %s", "interesting problem", exc_info=False)
-    logger.info("Houston, we have a %s", "interesting problem", exc_info=True)
+    req.app.logger.error("Here Is Your Error Log")
     return {"tags": "yes!"}
