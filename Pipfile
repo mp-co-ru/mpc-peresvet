@@ -11,6 +11,7 @@ fastapi = "*"
 ldap3 = "*"
 uvicorn = "*"
 loguru = "*"
+from-root = "*"
 
 [requires]
 python_version = "3.9"

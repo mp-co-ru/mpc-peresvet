@@ -7,5 +7,5 @@ router = APIRouter()
 async def pong(req: Request):
     # some async operation could happen here
     # example: `notes = await get_all_notes()`
-    req.app.logger.error("Here Is Your Error Log")
+    req.app.logger.warning("Logger works.")
     return {"tags": "yes!"}
