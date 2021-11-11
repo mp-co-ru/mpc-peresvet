@@ -2,12 +2,13 @@ version: '3.9'
 
 services:
   peresvet:
+    container_name: peresvet
     build: 
       context: .
       dockerfile: Docker/Dockerfile.peresvet
     command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000
     volumes:
-      - ./src/:/usr/src/app/
+      - ./src/:/usr/src/
     ports:
       - 8002:8000
     depends_on:
@@ -15,8 +16,10 @@ services:
       - victoriametrics
     environment:
       PRS_LOG_LEVEL: ${PRS_LOG_LEVEL}
+      TZ: ${TIME_ZONE} 
 
   ldap:
+    container_name: ldap
     build:
       context: .
       dockerfile: Docker/Dockerfile.ldap
@@ -24,6 +27,8 @@ services:
     ports:
       - 389:389
       - 636:636
+    environment:
+      TZ: ${TIME_ZONE}
   
   victoriametrics:
     image: victoriametrics/victoria-metrics
@@ -33,9 +38,14 @@ services:
       - 8428:8428
     volumes:
       - ./vm-data:/victoria-metrics-data
+    environment:
+      TZ: ${TIME_ZONE}
 
   grafana:
+    container_name: grafana
     image: grafana/grafana
     restart: always
     ports:
       - 3000:3000
+    environment:
+      TZ: ${TIME_ZONE}
