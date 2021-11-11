@@ -5,12 +5,11 @@ import logging.config
 import tempfile
 import os
 import sys
-from from_root import from_root
 
-LOG_LEVEL = os.getenv("PRS_LOG_LEVEL", "INFO").upper()
-#TO_FILE = os.getenv("PRS_LOG_TO_FILE", 'False').lower() in ('true', '1', 't')
-LOG_FILE_NAME = "peresvet.log"
-LOG_FILE = from_root(LOG_FILE_NAME)
+LOG_LEVEL = os.getenv("PRS_LOG_LEVEL", "").upper()
+LOG_LEVEL = ("INFO", LOG_LEVEL)[LOG_LEVEL != '']
+LOG_FILE_NAME = os.getenv("PRS_LOG_FILE", "")
+LOG_FILE_NAME = ("/var/log/peresvet.log", LOG_FILE_NAME)[LOG_FILE_NAME != ""]
 LOG_RETENTION = os.getenv("PRS_LOG_RETENTION", "1 months")
 LOG_ROTATION = os.getenv("PRS_LOG_ROTATION", "20 days")
 
@@ -56,7 +55,7 @@ class PrsLogger:
             format = "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> <level>{level: <8}</level> :: <level>{message}</level>"
 
         logger = cls.customize_logging(
-            LOG_FILE,
+            LOG_FILE_NAME,
             level=LOG_LEVEL,
             retention=LOG_RETENTION,
             rotation=LOG_ROTATION,
