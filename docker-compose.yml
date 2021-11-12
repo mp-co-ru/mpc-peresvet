@@ -36,8 +36,8 @@ services:
     restart: always
     ports:
       - 8428:8428
-    volumes:
-      - ./vm-data:/victoria-metrics-data
+    #volumes:
+    #  - ./vm-data:/victoria-metrics-data
     environment:
       TZ: ${TIME_ZONE}
 
