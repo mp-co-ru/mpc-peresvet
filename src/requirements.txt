@@ -1,6 +1,8 @@
 -i https://pypi.org/simple
 fastapi
 uvicorn
+gunicorn
+loguru
 
 #dev
 pytest

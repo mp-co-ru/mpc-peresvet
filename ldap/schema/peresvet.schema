@@ -44,9 +44,9 @@ attributetype ( 1.3.6.1.4.1.58316.2.3.4
 	SYNTAX 1.3.6.1.4.1.1466.115.121.1.15
 	SINGLE-VALUE )
 
-# единицы измерения тэга
+# единицы измерения тэга или константы
 attributetype ( 1.3.6.1.4.1.58316.2.3.5
-	NAME 'prsTagMeasureUnits'
+	NAME 'prsMeasureUnits'
 	DESC 'Единицы измерения тэга'
 	EQUALITY caseExactMatch
 	ORDERING caseExactOrderingMatch
@@ -228,7 +228,7 @@ objectClass ( 1.3.6.1.4.1.58316.2.4.2
 	NAME 'prsTag'
 	DESC 'класс тэга'
 	SUP prsModelNode STRUCTURAL
-	MAY ( prsValueTypeCode $ prsTagSource $ prsStore $ prsTagMeasureUnits $ prsTagMaxDev $ prsTagMaxLineDev $ prsTagArchive $ prsTagCompress $ prsTagValueScale $ prsTagStep $ prsTagUpdate $ prsTagDefaultValue ))
+	MAY ( prsValueTypeCode $ prsTagSource $ prsStore $ prsMeasureUnits $ prsTagMaxDev $ prsTagMaxLineDev $ prsTagArchive $ prsTagCompress $ prsTagValueScale $ prsTagStep $ prsTagUpdate $ prsTagDefaultValue ))
 
 objectClass ( 1.3.6.1.4.1.58316.2.4.3
 	NAME 'prsAlertLevel'
@@ -279,7 +279,7 @@ objectClass ( 1.3.6.1.4.1.58316.2.4.11
 	DESC 'класс `константа`'
 	SUP prsModelNode STRUCTURAL
 	MUST ( prsValueTypeCode $ prsConstValue )
-	MAY ( description $ prsTagMeasureUnits ))
+	MAY ( description $ prsMeasureUnits ))
 
 objectClass ( 1.3.6.1.4.1.58316.2.4.12
 	NAME 'prsSchedule'
