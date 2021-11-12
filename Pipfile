@@ -7,6 +7,10 @@ name = "pypi"
 sphinx-rtd-theme = "*"
 requests = "*"
 docker-compose = "*"
+fastapi = "*"
+ldap3 = "*"
+uvicorn = "*"
+loguru = "*"
 
 [requires]
 python_version = "3.9"
