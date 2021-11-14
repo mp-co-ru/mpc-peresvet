@@ -17,6 +17,10 @@ services:
     environment:
       PRS_LOG_LEVEL: ${PRS_LOG_LEVEL}
       TZ: ${TIME_ZONE} 
+      LDAP_HOST: ${LDAP_HOST}
+      LDAP_PORT: ${LDAP_PORT}
+      LDAP_USER: ${LDAP_USER}
+      LDAP_PASSWORD: ${LDAP_PASSWORD}
 
   ldap:
     container_name: ldap
