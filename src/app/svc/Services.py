@@ -1,7 +1,7 @@
 import os
 from logging import Logger
 from pydantic import create_model, BaseModel
-from typing import List, Type
+from typing import Dict, List, Type
 from ldap3 import ObjectDef, AttrDef, Connection, Entry
 from ..logger.PrsLogger import PrsLogger
 import app.ldap.ldap_db as ld
@@ -11,6 +11,10 @@ import app.models.models as m
 class Services:
     logger: Logger
     ldap: ld.PrsLDAP
+
+    config = {
+        "LDAP_BASE_NODE": os.getenv("LDAP_BASE_NODE", "cn=prs")
+    }
 
     @classmethod
     def set_logger(cls):
