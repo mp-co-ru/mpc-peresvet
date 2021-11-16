@@ -15,6 +15,10 @@ class PrsBaseModel(BaseModel):
     prsActive: bool = None
     prsApp: List[str] = None
 
+class PrsBaseModelCreate(BaseModel):
+    parentId: str = svc.config["LDAP_BASE_NODE"]
+    attributes: PrsBaseModel
+
 class PrsResponseCreate(BaseModel):
     """Response for /tags/ POST"""
     id: str
@@ -34,9 +38,9 @@ class PrsTagCreateAttrs(PrsBaseModel):
     prsUpdate: bool = True
     prsDefaultValue: str = None
 
-class PrsTagCreate(BaseModel):
+class PrsTagCreate(PrsBaseModelCreate):
     """Request /tags/ POST"""
-    parentId: str = svc.config["LDAP_BASE_NODE"]
+    parentId: str = "cn=tags,{}".format(svc.config["LDAP_BASE_NODE"])
     dataSourceId: str = None
     attributes: PrsTagCreateAttrs
         
