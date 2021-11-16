@@ -3,14 +3,17 @@ from fastapi import FastAPI
 from app.api import tags
 from app.svc.Services import Services
 
-def create_app() -> FastAPI:
-        
-    app = FastAPI(title='Peresvet', debug=False)
+app = app = FastAPI(title='Peresvet', debug=False)
+
+@app.on_event("startup")
+async def startup():
     Services.set_logger()
     Services.set_ldap()
+    Services.initialize_types()
 
-    return app
 
-app = create_app()
+@app.on_event("shutdown")
+async def shutdown():
+    pass
 
 app.include_router(tags.router)   

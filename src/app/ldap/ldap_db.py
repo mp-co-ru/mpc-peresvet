@@ -17,10 +17,10 @@ class PrsLDAP:
             pool_name="read_ldap", pool_size=20, auto_bind=True)
         svc.Services.logger.info("LDAP Server connected.")
     
-    def get_read_conn(self, **kwargs):
+    def get_read_conn(self, **kwargs) -> Connection:
         return self._read_conn
 
-    def get_write_conn(self, **kwargs):
+    def get_write_conn(self, **kwargs) -> Connection:
         return self._write_conn
     
     def __del__(self): 
