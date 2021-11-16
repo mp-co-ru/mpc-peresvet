@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from typing import List
 
+class PrsResponseCreate(BaseModel):
+    id: str
+
 class PrsTagCreateAttrs(BaseModel):
     cn: str = None
     prsValueTypeCode: int = 0

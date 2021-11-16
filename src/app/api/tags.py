@@ -2,13 +2,13 @@ from fastapi import APIRouter
 from fastapi import Request
 import json
 import app.models.models as m
+from app.svc.Services import Services as svc
 
 router = APIRouter()
 
-@router.post("/", status_code=201)
-async def pong(payload: m.PrsTagCreate):
+@router.post("/", response_model=m.PrsResponseCreate, status_code=201)
+async def create(payload: m.PrsTagCreate):
     # some async operation could happen here
-    # example: `notes = await get_all_notes()`
-    
-    return {"tags": "yes!"}
+    # example: `notes = await get_all_notes()`    
+    return {"id": "yes!"}
 
