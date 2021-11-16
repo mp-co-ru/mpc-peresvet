@@ -24,10 +24,10 @@ class Services:
     # данные по дефолтным значениям для классов
     defaults = {
         'prsTag': {
-            'prsTagArchive': True,
-            'prsTagCompress': True,
-            'prsTagStep': False,
-            'prsTagUpdate': True,
+            'prsArchive': True,
+            'prsCompress': True,
+            'prsStep': False,
+            'prsUpdate': True,
             'prsValueTypeCode': 0,
             'prsActive': True
         }
@@ -74,6 +74,7 @@ class Services:
                 python_type = List[python_type]
 
             fields[name] = (python_type, default)
+        return create_model(name, **fields)
 
     @classmethod
     def initialize_types(cls):
