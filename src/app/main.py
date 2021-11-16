@@ -15,4 +15,4 @@ async def startup():
 async def shutdown():
     pass
 
-app.include_router(tags.router)   
+app.include_router(tags.router, prefix="/tags", tags=["tags"])   
