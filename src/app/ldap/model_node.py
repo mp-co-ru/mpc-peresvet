@@ -1,6 +1,6 @@
 from ldap3 import Connection, ObjectDef, Reader, Writer, Entry, BASE
 from uuid import uuid4
-from pydantic import BaseModel, create_model_from_typeddict
+from pydantic import BaseModel, create_model
 from typing import List
 
 from app.svc.Services import Services
