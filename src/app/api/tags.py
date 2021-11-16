@@ -9,6 +9,7 @@ router = APIRouter()
 @router.post("/", response_model=m.PrsResponseCreate, status_code=201)
 async def create(payload: m.PrsTagCreate):
     # some async operation could happen here
-    # example: `notes = await get_all_notes()`    
+    # example: `notes = await get_all_notes()`
+    svc.logger.debug(payload)
     return {"id": "yes!"}
 

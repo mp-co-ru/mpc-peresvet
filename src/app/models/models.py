@@ -1,11 +1,26 @@
 from pydantic import BaseModel
 from typing import List
+from app.svc.Services import Services as svc
+
+class PrsBaseModel(BaseModel):
+    """Pydantic BaseModel for prsBaseModel attributes
+    """
+    cn: str = None
+    description: List[str] = None 
+    prsSystemNode: bool = None
+    prsEntityTypeCode: int = None
+    prsJsonConfigString: str = None
+    prsIndex: int = None
+    prsDefault: bool = None
+    prsActive: bool = None
+    prsApp: List[str] = None
 
 class PrsResponseCreate(BaseModel):
+    """Response for /tags/ POST"""
     id: str
 
-class PrsTagCreateAttrs(BaseModel):
-    cn: str = None
+class PrsTagCreateAttrs(PrsBaseModel):
+    """Attributes for request for /tags/ POST"""
     prsValueTypeCode: int = 0
     prsSource: str = None
     prsStore: str = None 
@@ -18,16 +33,10 @@ class PrsTagCreateAttrs(BaseModel):
     prsStep: bool = False
     prsUpdate: bool = True
     prsDefaultValue: str = None
-    description: List[str] = None
-    prsSystemNode: bool = None
-    prsEntityTypeCode: int = None
-    prsJsonConfigString: dict = None
-    prsIndex: int = None
-    prsDefault: bool = None
-    prsActive: bool = True
-    prsApp: List[str] = None
+
 class PrsTagCreate(BaseModel):
-    parentId: str = None
+    """Request /tags/ POST"""
+    parentId: str = svc.config["LDAP_BASE_NODE"]
     dataSourceId: str = None
     attributes: PrsTagCreateAttrs
         
