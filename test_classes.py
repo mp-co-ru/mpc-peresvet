@@ -1,3 +1,4 @@
+'''
 class A:
     cls_str: str = 'A'
     def __init__(self):
@@ -66,3 +67,32 @@ def sqlalchemy_to_pydantic(
         db_model.__name__, **fields  # type: ignore
     )
     return pydantic_model 
+'''
+from pydantic import BaseModel
+
+class PrsTagCreateAttrs(BaseModel):
+    """Attributes for request for /tags/ POST"""
+    prsValueTypeCode: int = 0
+    prsSource: str = None
+    prsStore: str = None 
+    prsMeasureUnits: str = None
+    prsMaxDev: float = None
+    prsMaxLineDev: float = None
+    prsArchive: bool = True
+    prsCompress: bool = True 
+    prsValueScale: float = None
+    prsStep: bool = False
+    prsUpdate: bool = True
+    prsDefaultValue: str = None
+
+class PrsTagCreate(BaseModel):
+    """Request /tags/ POST"""
+    parentId: str = "cn=tags"
+    dataSourceId: str = None
+    attributes: PrsTagCreateAttrs = PrsTagCreateAttrs ()
+
+
+tc = PrsTagCreate()
+tc.attributes.prsSource = "Source"
+for key, value in tc.attributes.__dict__.items():
+    print("k: {}, v: {}".format(key, value))
