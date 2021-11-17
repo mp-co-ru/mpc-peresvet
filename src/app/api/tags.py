@@ -14,4 +14,10 @@ async def create(payload: PrsTagCreate):
     new_tag = PrsTagEntry(payload)
     return {"id": new_tag.get_id()}
 
+@router.get("/{id}/", response_model=PrsTagCreate)
+async def read_tag(id: str):
+    # some async operation could happen here
+    # example: `notes = await get_all_notes()`
+    tag = PrsTagEntry(id=id)
+    return tag.data
 
