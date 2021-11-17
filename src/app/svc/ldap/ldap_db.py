@@ -1,6 +1,7 @@
 import os
 from ldap3 import SCHEMA, Server, Connection, SAFE_SYNC
 import app.svc.Services as svc
+
 class PrsLDAP:
     
     def __init__(self, host: str, port: str, uid: str, pwd: str):
