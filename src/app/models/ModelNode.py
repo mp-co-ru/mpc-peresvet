@@ -29,30 +29,47 @@ class PrsResponseCreate(BaseModel):
 
 class PrsModelNodeEntry:
     objectClass: str = 'prsModelNode'
-        
-    def __init__(self, data: PrsModelNodeCreate):
+
+    def _add_subnodes(self) -> None:
+        pass
+    
+    def _load(self, id: str = None, dn: str = None) -> None:
         conn = svc.ldap.get_read_conn()
         ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
-        reader = Reader(conn, ldap_cls_def, data.parentId)
+        ldap_cls_def += ['entryUUID']
+        if dn:
+            reader = Reader(conn, ldap_cls_def, dn, get_operational_attributes=True)
+        else:
+            reader = Reader(conn, ldap_cls_def, svc.config["LDAP_BASE_NODE"], get_operational_attributes=True, query='entryUUID: {}'.format(id))
+
         reader.search()
-        writer = Writer.from_cursor(reader)
-        if data.attributes.cn is None:
-            data.attributes.cn = str(uuid4())
-        self.entry = writer.new('cn={},{}'.format(data.attributes.cn, data.parentId))
-        for key, value in data.attributes.__dict__.items():
-            if value is not None:
-                self.entry[key] = value
-        self.entry.entry_commit_changes()
-        reader = Reader(conn, ldap_cls_def, self.entry.entry_dn, get_operational_attributes=True)
-        reader.search()
-        self.entry = reader[0]
-        self.add_subnodes()        
+        self.entry = reader[0]        
+
+    def __init__(self, data: PrsModelNodeCreate = None, id: str = None):
+        self.data = PrsModelNodeCreate()
+        if id is None:
+            conn = svc.ldap.get_read_conn()
+            ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
+            reader = Reader(conn, ldap_cls_def, data.parentId)
+            reader.search()
+            writer = Writer.from_cursor(reader)
+            if data.attributes.cn is None:
+                data.attributes.cn = str(uuid4())
+            entry = writer.new('cn={},{}'.format(data.attributes.cn, data.parentId))
+            for key, value in data.attributes.__dict__.items():
+                if value is not None:
+                    entry[key] = value
+                self.data[key] = value
+            entry.entry_commit_changes()
+            self._load(dn = entry.entry_dn)
+            self._add_subnodes()
+        else: 
+            self._load(id=id)
 
     def get_id(self) -> str:        
         return str(self.entry.OA_entryUUID)
             
-    def add_subnodes(self) -> None:
-        pass
+    
 
 '''
 def pr_obj():
