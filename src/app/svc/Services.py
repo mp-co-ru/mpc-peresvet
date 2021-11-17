@@ -3,10 +3,8 @@ from logging import Logger
 from pydantic import create_model, BaseModel
 from typing import Dict, List, Type
 from ldap3 import ObjectDef, AttrDef, Connection, Entry
-from ..logger.PrsLogger import PrsLogger
-import app.ldap.ldap_db as ld
-import app.models.models as m
-
+from app.svc.logger.PrsLogger import PrsLogger
+import app.svc.ldap.ldap_db as ld
 
 class Services:
     logger: Logger
