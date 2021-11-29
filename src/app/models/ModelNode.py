@@ -34,32 +34,32 @@ class PrsModelNodeEntry:
         pass
     
     def _load(self, id: str = None, dn: str = None) -> None:
-        conn = svc.ldap.get_read_conn()
-        ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
+        ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
         ldap_cls_def += ['entryUUID']
         if dn:
-            reader = Reader(conn, ldap_cls_def, dn, get_operational_attributes=True)
+            reader = Reader(self.conn, ldap_cls_def, dn, get_operational_attributes=True)
         else:
-            reader = Reader(conn, ldap_cls_def, svc.config["LDAP_BASE_NODE"], get_operational_attributes=True, query='entryUUID: {}'.format(id))
+            reader = Reader(self.conn, ldap_cls_def, svc.config["LDAP_BASE_NODE"], get_operational_attributes=True, query='entryUUID: {}'.format(id))
 
         reader.search()
-        self.entry = reader[0]        
+        self.entry = reader[0]    
 
-    def __init__(self, data: PrsModelNodeCreate = None, id: str = None):
+    def _init_data(self) -> None:
         self.data = PrsModelNodeCreate()
+
+    def __init__(self, conn: Connection, data: PrsModelNodeCreate = None, id: str = None):
+        self._init_data()
+        self.conn = conn
         if id is None:
-            conn = svc.ldap.get_read_conn()
-            ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
-            reader = Reader(conn, ldap_cls_def, data.parentId)
+            ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
+            reader = Reader(self.conn, ldap_cls_def, data.parentId)
             reader.search()
             writer = Writer.from_cursor(reader)
-            if data.attributes.cn is None:
-                data.attributes.cn = str(uuid4())
-            entry = writer.new('cn={},{}'.format(data.attributes.cn, data.parentId))
+            entry = writer.new('cn={},{}'.format((data.attributes.cn, str(uuid4()))[data.attributes.cn is None], data.parentId))
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
                     entry[key] = value
-                self.data[key] = value
+                self.data.attributes.__setattr__(key, value)
             entry.entry_commit_changes()
             self._load(dn = entry.entry_dn)
             self._add_subnodes()
@@ -83,13 +83,3 @@ def pr_obj():
     n_e.entry_commit_changes()
     Services.logger.info(o)
 '''
-
-
-
-
-
-
-
-
-
-

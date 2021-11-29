@@ -25,5 +25,7 @@ class PrsTagCreate(PrsModelNodeCreate):
 class PrsTagEntry(PrsModelNodeEntry):
     objectClass: str = 'prsTag'
         
+    def _init_data(self) -> None:
+        self.data = PrsTagCreate()
 
     
