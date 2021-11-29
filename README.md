@@ -5,6 +5,13 @@ Fileds: smart home, IoT, SCADA, dispatching and monitoring systems.
 Open documentation (index.html) and read Concept for current functionality and Installation for Peresvet installation procedure.
 # Development
 Approximate stages of development are described here.
+# Debug
+So, this chapter deals with VS Code.
+Thanks to https://github.com/Kludex/fastapi-docker-debug:
+1. ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up
+2. Press `F5` in VS Code...
+3. You may debug code!
+
 ## First step
 1. [Victoriametrics](https://victoriametrics.com/) as time-series database (TSDB).
 2. [Grafana](https://grafana.com/) as GUI.
