@@ -18,6 +18,7 @@ async def create(payload: PrsTagCreate):
 async def read_tag(id: str):
     # some async operation could happen here
     # example: `notes = await get_all_notes()`
+    svc.logger.debug("Working!")
     tag = PrsTagEntry(svc.ldap.get_read_conn(), id=id)
     return tag.data
 
