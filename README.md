@@ -6,11 +6,12 @@ Open documentation (index.html) and read Concept for current functionality and I
 # Development
 Approximate stages of development are described here.
 # Debug
-So, this chapter deals with VS Code.
+So, this chapter deals with VS Code.  
 Thanks to https://github.com/Kludex/fastapi-docker-debug:
-1. ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up
-2. Press `F5` in VS Code...
-3. You may debug code!
+1. Create new terminal in VSCode: menu `Terminal -> New terminal` (`Терминал -> Создать терминал`).
+2. In new terminal's command line run: ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up```
+3. Press `F5` in VS Code...
+4. You may debug code!
 
 ## First step
 1. [Victoriametrics](https://victoriametrics.com/) as time-series database (TSDB).
