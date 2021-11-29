@@ -8,7 +8,7 @@ Approximate stages of development are described here.
 # Debug
 So, this chapter deals with VS Code.
 Thanks to https://github.com/Kludex/fastapi-docker-debug:
-1. ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up
+1. Run: ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up```
 2. Press `F5` in VS Code...
 3. You may debug code!
 
