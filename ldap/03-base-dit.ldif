@@ -5,4 +5,4 @@ olcSuffix: cn=prs
 olcDbDirectory: /var/lib/ldap/cn=prs
 olcRootDN: cn=admin,cn=prs
 olcRootPW: {SSHA}GlDOjH9uZHTUZtJLiqoO2W+/uzazHpVy
-olcDbIndex: uniqueIdentifier,objectClass,prsActive eq
+olcDbIndex: objectClass,entryCSN,entryUUID eq

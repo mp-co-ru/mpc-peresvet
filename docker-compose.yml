@@ -21,6 +21,7 @@ services:
       LDAP_PORT: ${LDAP_PORT}
       LDAP_USER: ${LDAP_USER}
       LDAP_PASSWORD: ${LDAP_PASSWORD}
+      LDAP_BASE_NODE: ${LDAP_BASE_NODE}
 
   ldap:
     container_name: ldap
