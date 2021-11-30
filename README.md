@@ -1,42 +1,56 @@
-# Introduction
-This project deals with data acquisition, GUI, decision making.
-Fileds: smart home, IoT, SCADA, dispatching and monitoring systems.
-# How to use
-Open documentation (index.html) and read Concept for current functionality and Installation for Peresvet installation procedure.
-# Development
-Approximate stages of development are described here.
-# Debug
-So, this chapter deals with VS Code.  
-Thanks to https://github.com/Kludex/fastapi-docker-debug:
-1. Create new terminal in VSCode: menu `Terminal -> New terminal` (`Терминал -> Создать терминал`).
-2. In new terminal's command line run: ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up```
-3. Press `F5` in VS Code...
-4. You may debug code!
+# Описание
+**Пересвет** - платформа для автоматизации технических объектов. Сбор данных, хранение, обработка, 
+выполнение определённых действий на базе происходящих событий.
 
-## First step
-1. [Victoriametrics](https://victoriametrics.com/) as time-series database (TSDB).
-2. [Grafana](https://grafana.com/) as GUI.
-3. Short python script to write data to one metric.
-## Second step
-Peresvet: own decision as infrastructure system.
-Base functionality:
-1. Use Victoriametrics as TSDB.
-2. Create tags (crud commands). One tag - one metric.
-3. Read/write data.
-4. Use LDAP server for entity descriptions.
-## Third step
-Typical connector for ESP32 controller.
-Will write data to Peresvet over http requests and will realize some control algorithm.
-## Next steps
-Functional evolution.
-Peresvet:
-1. Use different background storages as TSDB.
-2. Make object hierarchy. Every object may have tag set.
-   This hierarchy is build on LDAP server
-3. Use websockets
-4. Not only read data over connector, but write it also. User can control devices over WebUI.
-5. Calculated tags
-6. External method calls
-7. Alerts
-8. RabbitMQ
+Отличия от баз данных реального времени (Prometheus, VictoriaMetrics и т.д.):
+1. Инфраструктура. Платформа представляет собой, в первую очередь, инфраструктурную надстройку над базой данных реального времени, 
+   т.е. предлагает создание иерархии объектов, каждый из которых обладает набором параметров (тэгов).
+2. Расчётные тэги. У объекта могут быть параметры, которые рассчитываются на основании других параметров.
+3. Внешние расчётные методы. К событиям, происходящим в платформе (изменения тэгов; тревоги; расписания) могут быть привязаны как 
+   расчётные методы тэгов, так и просто внешние методы, запускающие какие-либо внешние процессы.
+4. Платформа позволяет не только собирать внешние данные, но и записывать (через коннекторы) данные во внешние источники.
+   Таким образом, на базе платформы можно строить SCADA-системы, системы управления умным домом и т.д.
+Говоря в общем, платформа Пересвет, в отличие от большинства баз данных реального времени, нацелена не столько на сбор метрик,
+сколько на автоматизацию технических объектов.
+# Использование
+1. Устанавливаем **Пересвет**. В качестве хранилища данных используется [Victoriametrics](https://victoriametrics.com/). 
+   В качестве приложения для отображения данных - [Grafana](https://grafana.com/).
+2. Создаём в платформе иерархию объектов с параметрами, либо просто список параметров. 
+3. К параметрам привязываем поставщиков данных (коннекторы).
+4. Запускаем Grafana, создаём панели для просмотра данных. В качестве источника данных указываем VictoriaMetrics.
+   > В дальнейшем будет написан собственный DataSource для Grafana.
+
+Подробно все шаги описаны в документации, разделы "Концепция" и "Установка".
+
+# Отладка
+**Пересвет** разрабатывается с использованием VSCode, поэтому отладка описана применительно к этому инструменту.
+
+Для отладки в VSCode должен быть установлен плагин `ms-vscode-remote.remote-containers`.
+
+Отладка настроена по рецепту, предложенному https://github.com/Kludex/fastapi-docker-debug.
+
+Запуск отладки:
+1. Создаем в VSCode новый терминал: `Terminal -> New terminal` (`Терминал -> Создать терминал`).
+2. В терминале выполняем команду: ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up```
+3. Нажимаем `F5`...
+4. Мы вошли в режим отладки приложения.
+
+# Приблизительный план разработки
+## Первый этап
+1. В качестве базы данных реального времени используем [Victoriametrics](https://victoriametrics.com/).
+2. Web-клиент для просмотра данных - [Grafana](https://grafana.com/).
+3. Grafana забирает данные непосредственно из VictoriaMetrics, минуя **Пересвет**.
+4. Параметры (тэги) хранятся линейным списком, иерархия объектов не поддерживается.
+## Второй этап
+1. Создание типового коннектора как поставщика данных.
+2. Создание на базе типового - коннектора для контроллера ESP32.
+3. Реальный рабочий пример - отдельный проект для мониторинга и управления насосной станцией.
+## Третий этап
+Дальнейшее развитие функциональности:
+1. Иерархия объектов.
+2. Расчётные тэги.
+3. Использование других TSDB.
+4. Одновременное использование нескольких хранилищ.
+5. Работа с камерами.
+6. И т.д.
 
