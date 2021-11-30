@@ -67,10 +67,9 @@ class PrsModelNodeEntry:
             self._load(id=id)
 
     def get_id(self) -> str:        
-        return str(self.entry.OA_entryUUID)
+        return str(self.entry.entryUUID)
             
     
-
 '''
 def pr_obj():
     conn = Services.ldap.get_read_conn()
