@@ -21,3 +21,7 @@ class Services:
     @classmethod
     def set_ldap(cls):
         cls.ldap = ld.PrsLDAP(os.getenv("LDAP_HOST"), int(os.getenv("LDAP_PORT")), os.getenv("LDAP_USER"), os.getenv("LDAP_PASSWORD")) 
+
+    @classmethod
+    def get_base_node_id(cls):
+        pass
