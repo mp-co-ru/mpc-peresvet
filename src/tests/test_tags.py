@@ -9,11 +9,15 @@ import pytest
     ],
 )
 def test_tag_add(test_app, payload, status_code, res):
-    response = test_app.post("/tags", data=json.dumps(payload))
+    response = test_app.post("/tags/", data=json.dumps(payload))
     assert response.status_code == status_code
     try: 
         uuid.UUID(response.json()['id'])
     except:
         assert False, "There is no UUID returned as tag id"  
     
-
+def test_tag_get(test_app):
+    response = test_app.post("/tags/", data=json.dumps({}))
+    tag_id = response.json()['id']
+    response = test_app.get("/tags/{}".format(tag_id))
+    assert response.status_code == 200
