@@ -1,12 +1,9 @@
 import os
-from fastapi import FastAPI
 from app.api import tags
-from app.svc.Services import Services
+from app.PrsApplication import PrsApplication
 
-app = FastAPI(title='Peresvet', debug=False)
-Services.set_logger()
-Services.set_ldap()
-
+app = PrsApplication(title='Peresvet')
+app.include_router(tags.router, prefix="/tags", tags=["tags"])   
 
 @app.on_event("startup")
 async def startup():
@@ -16,4 +13,3 @@ async def startup():
 async def shutdown():
     pass
 
-app.include_router(tags.router, prefix="/tags", tags=["tags"])   
