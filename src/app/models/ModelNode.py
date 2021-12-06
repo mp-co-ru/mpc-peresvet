@@ -1,7 +1,8 @@
-from ldap3 import Connection, ObjectDef, Reader, Writer, Entry, WritableEntry, BASE, SUBTREE
+from ldap3 import Connection, ObjectDef, Reader, Writer, SUBTREE
 from uuid import uuid4, UUID
 from pydantic import BaseModel, validator
 from typing import List, Optional
+import json
 
 from app.svc.Services import Services as svc
 
@@ -47,9 +48,9 @@ class PrsModelNodeEntry:
         ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
         ldap_cls_def += ['entryUUID']
         if dn is not None:
-            reader = Reader(self.conn, ldap_cls_def, dn, get_operational_attributes=True)
+            reader = Reader(self.conn, ldap_cls_def, dn, get_operational_attributes=False)
         else:
-            reader = Reader(self.conn, ldap_cls_def, self.__class__.default_parent_dn, get_operational_attributes=True, query='entryUUID: {}'.format(id))
+            reader = Reader(self.conn, ldap_cls_def, self.__class__.default_parent_dn, get_operational_attributes=False, query='entryUUID: {}'.format(id))
 
         reader.search()
         self.entry = reader[0] 
@@ -107,11 +108,14 @@ class PrsModelNodeEntry:
 
     def form_get_response(self):
         data = self.payload_class()
-        attrs = self.entry.entry_to_json(include_empty=False)
+        attrs = json.loads(self.entry.entry_to_json(include_empty=False))
         attrs.pop("dn")
-        attrs.pop("objectClass")
-        data.attributes = attrs
-        data.parentId = self.parent_id
+        attrs["attributes"].pop("objectClass")
+        
+        for key, value in attrs["attributes"].items():
+            data.attributes.__setattr__(key, value)
+
+        data.__setattr__("parentId", self.parent_id)
         self._add_fields_to_get_response(data)
         return data
     
