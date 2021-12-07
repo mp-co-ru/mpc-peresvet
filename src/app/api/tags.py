@@ -10,7 +10,8 @@ router = APIRouter()
 
 @router.post("/", response_model=PrsResponseCreate, status_code=201)
 async def create(payload: PrsTagCreate):
-    return {"id": main.app.create_tag(payload).get_id()}
+    id = main.app.create_tag(payload).get_id()
+    return {"id": id}
 
 @router.get("/{id}/", response_model=PrsTagCreate)
 async def read_tag(id: str):
