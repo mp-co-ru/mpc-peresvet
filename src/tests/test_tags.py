@@ -1,6 +1,9 @@
 import json
 import uuid
 import pytest
+from app.models.Tag import PrsTagEntry, PrsTagCreate
+
+from app.svc.Services import Services as svc
 
 @pytest.mark.parametrize(
     "payload, status_code, res",
@@ -21,3 +24,23 @@ def test_tag_get(test_app):
     tag_id = response.json()['id']
     response = test_app.get("/tags/{}".format(tag_id))
     assert response.status_code == 200
+
+def test_PrsTag(test_app):
+    
+    try:
+        new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
+    except:
+        assert False, "Fail while creating new tag."
+
+    try:
+        uuid.UUID(new_tag.id)
+    except:
+        assert False, "Tag id is not UUID."
+
+    tag_id = new_tag.id
+    try:
+        tag = PrsTagEntry(conn=svc.ldap.get_read_conn(), id=tag_id)
+    except:
+        assert False, "Fail while load tag."
+
+    assert tag.id == tag_id
