@@ -9,3 +9,5 @@ pydantic
 #dev
 pytest
 requests
+mock
+pytest-cov
