@@ -23,10 +23,9 @@ class PrsTagCreate(PrsModelNodeCreate):
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 
 class PrsTagEntry(PrsModelNodeEntry):
+    payload_class = PrsTagCreate
     objectClass: str = 'prsTag'
     default_parent_dn: str = "cn=tags,{}".format(svc.config["LDAP_BASE_NODE"])
     
-    def _add_fields_to_get_response(self, data): 
-        #data.__setattr__("dataSourceId", self.dataSourceId)
-        pass
+    
     

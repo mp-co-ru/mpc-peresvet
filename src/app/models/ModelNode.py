@@ -1,16 +1,17 @@
-from ldap3 import Connection, ObjectDef, Reader, Writer, SUBTREE
+from ldap3 import Connection, ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, Entry
 from uuid import uuid4, UUID
 from pydantic import BaseModel, validator
 from typing import List, Optional
 import json
 
 from app.svc.Services import Services as svc
+import app.main as main
 
 class PrsModelNodeAttrs(BaseModel):
     """Pydantic BaseModel for prsBaseModel attributes
     """
     cn: Optional[List[str]] = None
-    description: List[str] = None 
+    description: Optional[List[str]]
     prsSystemNode: bool = None
     prsEntityTypeCode: int = None
     prsJsonConfigString: str = None
@@ -25,109 +26,83 @@ class PrsModelNodeCreate(BaseModel):
     attributes: PrsModelNodeAttrs = PrsModelNodeAttrs()
     
     @validator('parentId')
-    def parentId_must_be_uuid(cls, v):
-        try:
-            UUID(v)
-        except:
-            raise ValueError('parentId must be uuid')
-        return v.title()
+    def parentId_must_be_uuid_or_none(cls, v):
+        if v is not None:
+            try:
+                UUID(v)
+            except:
+                raise ValueError('parentId must be uuid')
+        return v
 
 class PrsResponseCreate(BaseModel):
     """Response for POST-request for entity creation"""
     id: str
 
 class PrsModelNodeEntry:
-    payload_class: None
     objectClass: str = 'prsModelNode'
     default_parent_dn: str = svc.config["LDAP_BASE_NODE"]
+    payload_class = PrsModelNodeCreate
 
     def _add_subnodes(self) -> None:
         pass
     
-    def _load(self, id: str = None, dn: str = None) -> None:
-        ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
-        ldap_cls_def += ['entryUUID']
-        if dn is not None:
-            reader = Reader(self.conn, ldap_cls_def, dn, get_operational_attributes=False)
-        else:
-            reader = Reader(self.conn, ldap_cls_def, self.__class__.default_parent_dn, get_operational_attributes=False, query='entryUUID: {}'.format(id))
-
-        reader.search()
-        self.entry = reader[0] 
-
-    @classmethod
-    def _get_node_dn(cls, conn: Connection, id: str) -> str:
-        found = conn.search(
-            search_base=cls.default_parent_dn,
-            search_filter="(entryUUID={})".format(id),
-            search_scope=SUBTREE,
-            dereference_aliases=False,
-            attributes=['cn']
-        )
-
-        return conn.response[0]['dn'] if found else None
-    
-    @classmethod
-    def _get_node_id(cls, conn: Connection, dn: str) -> str:
-        ldap_cls_def = ObjectDef(cls.objectClass, conn)
-        ldap_cls_def += ['entryUUID']
-        reader = Reader(conn, ldap_cls_def, dn, get_operational_attributes=True)
-        reader.search()
-        return str(reader[0].entryUUID)
-
     def __init__(self, conn: Connection, data: PrsModelNodeCreate = None, id: str = None):
         self.conn = conn
-        self.payload_class = data.__class__
+        ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
+        ldap_cls_def += ['entryUUID']
+            
         if id is None:
-            ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
             if data.parentId is None:
-                self.parent_dn = self.__class__.default_parent_dn
-                self.parent_id = self.__class__._get_node_id(conn, self.parent_dn)
+                parent_dn = self.__class__.default_parent_dn
             else:
-                self.parent_id = data.parentId
-                self.parent_dn = self.__class__._get_node_dn(conn, data.parentId)
+                parent_dn = main.app.get_node_dn_by_id(data.parentId)
                 
-            reader = Reader(self.conn, ldap_cls_def, self.parent_dn)
+            reader = Reader(self.conn, ldap_cls_def, parent_dn)
             reader.search()
             writer = Writer.from_cursor(reader)
-            entry = writer.new('cn={},{}'.format((data.attributes.cn, str(uuid4()))[data.attributes.cn is None], self.parent_dn))
+            entry = writer.new('cn={},{}'.format((data.attributes.cn, str(uuid4()))[data.attributes.cn is None], parent_dn))
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
                     entry[key] = value
             entry.entry_commit_changes()
-            self._load(dn = entry.entry_dn)
+            self.data = data.copy(deep=True)
+            self.dn = entry.entry_dn
+            
+            _, _, response, _ = self.conn.search(search_base=self.dn,
+                search_filter='(cn=*)', search_scope=BASE, dereference_aliases=DEREF_NEVER, attributes='entryUUID')
+            attrs = dict(response[0]['attributes'])
+            self.id = attrs['entryUUID']
+            
             self._add_subnodes()
         else: 
-            self._load(id=id)
+            self.data = self.__class__.payload_class()
+            _, _, response, _ = self.conn.search(search_base=svc.config["LDAP_BASE_NODE"],
+                search_filter='(entryUUID={})'.format(id), search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
+            attrs = dict(response[0]['attributes'])
+            self.id = id
+
+            attrs.pop("objectClass")
+            for key, value in attrs.items():
+                self.data.attributes.__setattr__(key, value)
+            
+            self.dn = response[0]['dn']
 
     def get_id(self) -> str:        
-        return str(self.entry.entryUUID)
+        return self.id
 
     def _add_fields_to_get_response(self, data): 
-        pass
+        '''
+        Метод вызывается из метода form_get_response для того, чтобы каждый класс-наследник добавлял к формируемому ответу свои поля.
+        '''
+        return data
 
     def form_get_response(self):
-        data = self.payload_class()
-        attrs = json.loads(self.entry.entry_to_json(include_empty=False))
-        attrs.pop("dn")
-        attrs["attributes"].pop("objectClass")
-        
-        for key, value in attrs["attributes"].items():
-            data.attributes.__setattr__(key, value)
-
-        data.__setattr__("parentId", self.parent_id)
-        self._add_fields_to_get_response(data)
+        '''
+        Метод возвращает класс для ответов по запросам GET.
+        Не храним этот класс всегда, чтобы не дублировать данные.
+        Используем обычный запрос к ldap, а не существующий уже self.entry потому, что self.entry всегда возвращает атрибуты в виде массивов.
+        '''
+        data = self.data.copy(deep=True)
+        data = self._add_fields_to_get_response(data)
         return data
     
-'''
-def pr_obj():
-    conn = Services.ldap.get_read_conn()
-    o = ObjectDef('prsModelNode', conn)
-    r = Reader(conn, o, 'cn=tags,cn=prs')
-    r.search()
-    w = Writer.from_cursor(r)
-    n_e = w.new('cn=tag1,cn=tags,cn=prs')
-    n_e.uniqueIdentifier = str(uuid4())
-    n_e.entry_commit_changes()
-    Services.logger.info(o)
-'''
