@@ -14,7 +14,7 @@ class PrsLDAP:
             pool_name="write_ldap", pool_size=1, auto_bind=True)
         self._read_conn = Connection(
             self._server, user=uid, password=pwd, 
-            client_strategy=SAFE_SYNC, read_only=True,
+            client_strategy=SAFE_SYNC, read_only=True, check_names=True,  
             pool_name="read_ldap", pool_size=20, auto_bind=True)
         svc.Services.logger.info("LDAP Server connected.")
     

@@ -18,14 +18,14 @@ class PrsTagCreateAttrs(PrsModelNodeAttrs):
 
 class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    parentId: str = "cn=tags,{}".format(svc.config["LDAP_BASE_NODE"])
+    parentId: str = None
     dataSourceId: str = None
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 
 class PrsTagEntry(PrsModelNodeEntry):
+    payload_class = PrsTagCreate
     objectClass: str = 'prsTag'
-        
-    def _init_data(self) -> None:
-        self.data = PrsTagCreate()
-
+    default_parent_dn: str = "cn=tags,{}".format(svc.config["LDAP_BASE_NODE"])
+    
+    
     
