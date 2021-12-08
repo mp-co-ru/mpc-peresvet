@@ -25,8 +25,7 @@ def test_tag_get(test_app):
     response = test_app.get("/tags/{}".format(tag_id))
     assert response.status_code == 200
 
-def test_PrsTag(test_app):
-    
+def test_PrsTag():
     try:
         new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
     except:
@@ -44,3 +43,8 @@ def test_PrsTag(test_app):
         assert False, "Fail while load tag."
 
     assert tag.id == tag_id
+
+def test_f_35_cn_as_uuid():
+    
+    new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
+    assert new_tag.data.attributes.cn == [new_tag.id]
