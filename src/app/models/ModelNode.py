@@ -1,7 +1,7 @@
 from ldap3 import Connection, ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, Entry
 from uuid import uuid4, UUID
 from pydantic import BaseModel, validator
-from typing import List, Optional
+from typing import List, Optional, Union
 import json
 
 from app.svc.Services import Services as svc
@@ -10,15 +10,37 @@ import app.main as main
 class PrsModelNodeAttrs(BaseModel):
     """Pydantic BaseModel for prsBaseModel attributes
     """
-    cn: Optional[List[str]] = None
-    description: Optional[List[str]]
-    prsSystemNode: bool = None
+    cn: Union[str, List[str]] = None
+    description: Union[str, List[str]] = None
+    prsSystemNode: Optional[bool]
     prsEntityTypeCode: int = None
     prsJsonConfigString: str = None
     prsIndex: int = None
     prsDefault: bool = None
     prsActive: bool = None
-    prsApp: List[str] = None
+    prsApp: Union[str, List[str]] = None
+    
+    @validator('cn', 'description', 'prsApp')
+    def empty_list_is_none(cls, v):
+        if isinstance(v, list) and len(v)==0:
+            return None
+        return v
+
+    '''
+    class Item(BaseModel):
+        name: str
+        description: Optional[str] = Field(
+            None, title="The description of the item", max_length=300
+        )
+        price: float = Field(..., gt=0, description="The price must be greater than zero")
+        tax: Optional[float] = None
+
+
+    @app.put("/items/{item_id}")
+    async def update_item(item_id: int, item: Item = Body(..., embed=True)):
+        results = {"item_id": item_id, "item": item}
+        return results
+    '''
 
 class PrsModelNodeCreate(BaseModel):
     """Class for http requests validation"""
@@ -60,7 +82,14 @@ class PrsModelNodeEntry:
             reader = Reader(self.conn, ldap_cls_def, parent_dn)
             reader.search()
             writer = Writer.from_cursor(reader)
-            entry = writer.new('cn={},{}'.format((data.attributes.cn, str(uuid4()))[data.attributes.cn is None], parent_dn))
+            if data.attributes.cn is None:
+                cn = str(uuid4())
+            elif isinstance(data.attributes.cn, str):
+                cn = data.attributes.cn
+            else: 
+                cn = data.attributes.cn[0]
+
+            entry = writer.new('cn={},{}'.format(cn, parent_dn))
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
                     entry[key] = value
@@ -72,11 +101,12 @@ class PrsModelNodeEntry:
             attrs = dict(response[0]['attributes'])
             self.id = attrs['entryUUID']
 
-            entry.entry_rename("cn={}".format(self.id))
-            entry.entry_commit_changes()
-
             self.data = data.copy(deep=True)
-            self.data.attributes.cn = [self.id]
+            if data.attributes.cn is None:
+                self.data.attributes.cn = self.id
+                entry.entry_rename("cn={}".format(self.id))
+                entry.entry_commit_changes()
+            
             self.dn = entry.entry_dn
             
             self._add_subnodes()

@@ -3,7 +3,9 @@ from app.models.ModelNode import PrsModelNodeAttrs, PrsModelNodeCreate, PrsModel
 
 class PrsTagCreateAttrs(PrsModelNodeAttrs):
     """Attributes for request for /tags/ POST"""
-    prsValueTypeCode: int = 0
+    
+    """top"""
+    prsValueTypeCode: int = 0 
     prsSource: str = None
     prsStore: str = None 
     prsMeasureUnits: str = None
