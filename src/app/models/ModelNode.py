@@ -65,13 +65,19 @@ class PrsModelNodeEntry:
                 if value is not None:
                     entry[key] = value
             entry.entry_commit_changes()
-            self.data = data.copy(deep=True)
-            self.dn = entry.entry_dn
-            
-            _, _, response, _ = self.conn.search(search_base=self.dn,
+
+            # прочитаем ID нового узла
+            _, _, response, _ = self.conn.search(search_base=entry.entry_dn,
                 search_filter='(cn=*)', search_scope=BASE, dereference_aliases=DEREF_NEVER, attributes='entryUUID')
             attrs = dict(response[0]['attributes'])
             self.id = attrs['entryUUID']
+
+            entry.entry_rename("cn={}".format(self.id))
+            entry.entry_commit_changes()
+
+            self.data = data.copy(deep=True)
+            self.data.attributes.cn = [self.id]
+            self.dn = entry.entry_dn
             
             self._add_subnodes()
         else: 
