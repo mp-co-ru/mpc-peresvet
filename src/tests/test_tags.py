@@ -1,9 +1,11 @@
 import json
 import uuid
 import pytest
+from mock import patch
 from app.models.Tag import PrsTagEntry, PrsTagCreate
-
+from app.svc.ldap.ldap_db import PrsLDAP
 from app.svc.Services import Services as svc
+import ldap3
 
 @pytest.mark.parametrize(
     "payload, status_code, res",
@@ -18,7 +20,7 @@ def test_tag_add(test_app, payload, status_code, res):
         uuid.UUID(response.json()['id'])
     except:
         assert False, "There is no UUID returned as tag id"  
-    
+
 def test_tag_get(test_app):
     response = test_app.post("/tags/", data=json.dumps({}))
     tag_id = response.json()['id']
@@ -45,6 +47,5 @@ def test_PrsTag():
     assert tag.id == tag_id
 
 def test_f_35_cn_as_uuid():
-    
     new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
     assert new_tag.data.attributes.cn == [new_tag.id]
