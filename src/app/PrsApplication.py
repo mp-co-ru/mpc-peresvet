@@ -4,8 +4,8 @@ from typing import Optional, Union, List
 from ldap3 import Reader, ObjectDef, BASE, DEREF_NEVER, SUBTREE
 
 from app.svc.Services import Services as svc
-from app.models.ModelNode import PrsResponseCreate
 from app.models.Tag import PrsTagCreate, PrsTagEntry
+from app.models.DataStorage import PrsDataStorageCreate, PrsDataStorageEntry
 
 class PrsApplication(FastAPI):
     def __init__(self, **kwargs):
@@ -15,6 +15,12 @@ class PrsApplication(FastAPI):
 
     def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
         return PrsTagEntry(svc.ldap.get_write_conn(), payload)
+
+    def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
+        return PrsDataStorageEntry(svc.ldap.get_write_conn(), payload)
+
+    def read_dataStorage(self, id: str) -> PrsDataStorageEntry:
+        return PrsDataStorageEntry(svc.ldap.get_read_conn(), id=id)
 
     def read_tag(self, id: str) -> PrsTagEntry:
         return PrsTagEntry(svc.ldap.get_read_conn(), id=id)

@@ -7,7 +7,7 @@ import json
 from app.svc.Services import Services as svc
 import app.main as main
 
-class PrsModelNodeAttrs(BaseModel):
+class PrsModelNodeCreateAttrs(BaseModel):
     """Pydantic BaseModel for prsBaseModel attributes
     """
     cn: Union[str, List[str]] = Field(None, title="Имя узла", 
@@ -80,9 +80,9 @@ class PrsModelNodeAttrs(BaseModel):
 class PrsModelNodeCreate(BaseModel):
     """Class for http requests validation"""
     parentId: str = None # uuid of parent node
-    attributes: PrsModelNodeAttrs = PrsModelNodeAttrs()
+    attributes: PrsModelNodeCreateAttrs = PrsModelNodeCreateAttrs()
     
-    @validator('parentId')
+    @validator('parentId', check_fields=False)
     def parentId_must_be_uuid_or_none(cls, v):
         if v is not None:
             try:
@@ -104,6 +104,9 @@ class PrsModelNodeEntry:
         pass
     
     def __init__(self, conn: Connection, data: PrsModelNodeCreate = None, id: str = None):
+        # сохраняем коннект на время создания/чтения узла, в конце конструктора - освобождаем
+        # делаем так, чтобы не плодить активных коннектов
+        # в случае, когда необходимо будет реагировать на 
         self.conn = conn
         ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
         ldap_cls_def += ['entryUUID']
@@ -156,7 +159,7 @@ class PrsModelNodeEntry:
             for key, value in attrs.items():
                 self.data.attributes.__setattr__(key, value)
             
-            self.dn = response[0]['dn']
+            self.dn = response[0]['dn']        
 
     def get_id(self) -> str:        
         return self.id
