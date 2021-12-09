@@ -2,9 +2,9 @@ from pydantic import BaseModel, validator, Field
 from typing import List, Optional, Union
 
 from app.svc.Services import Services as svc
-from app.models.ModelNode import PrsModelNodeAttrs, PrsModelNodeCreate, PrsModelNodeEntry
+from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
 
-class PrsTagCreateAttrs(PrsModelNodeAttrs):
+class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
     """Attributes for request for /tags/ POST"""
     
     """top"""
