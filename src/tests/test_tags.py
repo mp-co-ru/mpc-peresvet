@@ -48,7 +48,7 @@ def test_PrsTag():
 
 def test_f_35_cn_as_uuid():
     new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
-    assert new_tag.data.attributes.cn == [new_tag.id]
+    assert new_tag.data.attributes.cn == new_tag.id
 
 def test_add_tag_with_multiple_cn():
     data=PrsTagCreate()
