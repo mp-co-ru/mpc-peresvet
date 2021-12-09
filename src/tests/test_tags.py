@@ -49,3 +49,14 @@ def test_PrsTag():
 def test_f_35_cn_as_uuid():
     new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
     assert new_tag.data.attributes.cn == [new_tag.id]
+
+def test_add_tag_with_multiple_cn():
+    data=PrsTagCreate()
+    data.attributes.cn = ["имя 1", "имя 2"]
+    try:
+        new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=data)
+    except:
+        assert False, "Tag with multiple cn is not created"
+    
+    assert new_tag.data.attributes.cn == data.attributes.cn
+    
