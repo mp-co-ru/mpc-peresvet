@@ -12,6 +12,7 @@ ldap3 = "*"
 uvicorn = "*"
 loguru = "*"
 pydantic = "*"
+validators = "*"
 
 [requires]
 python_version = "3.9"

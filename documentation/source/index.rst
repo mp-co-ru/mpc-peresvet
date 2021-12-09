@@ -13,7 +13,7 @@ Tag data come from external sources and stored in time series database (TSDB).
    :maxdepth: 2
    :caption: Contents:
 
-   Concept<concept>
+   Описание<concept>
    Installation<installation>
    Тестовый пример<test_writer>
    Administration<administration>

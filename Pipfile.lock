@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "05861c894e5b7b81fb68216a921dbac2bd4feecd1a3cf573a4e024b21c65f730"
+            "sha256": "01e46f919cd43a155ecb674208f612a85436bb4c6e6054e4dea628912af44394"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -172,6 +172,14 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==36.0.0"
+        },
+        "decorator": {
+            "hashes": [
+                "sha256:7b12e7c3c6ab203a29e157335e9122cb03de9ab7264b137594103fd4a683b374",
+                "sha256:e59913af105b9860aa2c8d3272d9de5a56a4e608db9a2f167a8480b323d529a7"
+            ],
+            "markers": "python_version >= '3.5'",
+            "version": "==5.1.0"
         },
         "distro": {
             "hashes": [
@@ -359,14 +367,6 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==2.0.1"
-        },
-        "mock": {
-            "hashes": [
-                "sha256:122fcb64ee37cfad5b3f48d7a7d51875d7031aaf3d8be7c42e2bee25044eee62",
-                "sha256:7d3fbbde18228f4ff2f1f119a45cdffa458b4c0dee32eb4d2bb2f82554bac7bc"
-            ],
-            "index": "pypi",
-            "version": "==4.0.3"
         },
         "packaging": {
             "hashes": [
@@ -682,11 +682,19 @@
         },
         "uvicorn": {
             "hashes": [
-                "sha256:17f898c64c71a2640514d4089da2689e5db1ce5d4086c2d53699bf99513421c1",
-                "sha256:d9a3c0dd1ca86728d3e235182683b4cf94cd53a867c288eaeca80ee781b2caff"
+                "sha256:d8c839231f270adaa6d338d525e2652a0b4a5f4c2430b5c4ef6ae4d11776b0d2",
+                "sha256:eacb66afa65e0648fcbce5e746b135d09722231ffffc61883d4fac2b62fbea8d"
             ],
             "index": "pypi",
-            "version": "==0.15.0"
+            "version": "==0.16.0"
+        },
+        "validators": {
+            "hashes": [
+                "sha256:0143dcca8a386498edaf5780cbd5960da1a4c85e0719f3ee5c9b41249c4fefbd",
+                "sha256:37cd9a9213278538ad09b5b9f9134266e7c226ab1fede1d500e29e0a8fbb9ea6"
+            ],
+            "index": "pypi",
+            "version": "==0.18.2"
         },
         "websocket-client": {
             "hashes": [
