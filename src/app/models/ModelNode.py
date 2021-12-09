@@ -104,6 +104,9 @@ class PrsModelNodeEntry:
         pass
     
     def __init__(self, conn: Connection, data: PrsModelNodeCreate = None, id: str = None):
+        # сохраняем коннект на время создания/чтения узла, в конце конструктора - освобождаем
+        # делаем так, чтобы не плодить активных коннектов
+        # в случае, когда необходимо будет реагировать на 
         self.conn = conn
         ldap_cls_def = ObjectDef(self.__class__.objectClass, self.conn)
         ldap_cls_def += ['entryUUID']
