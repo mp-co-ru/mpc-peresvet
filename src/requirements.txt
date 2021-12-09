@@ -5,6 +5,7 @@ uvicorn
 gunicorn
 loguru
 pydantic
+validators
 
 #dev
 pytest

@@ -2,24 +2,21 @@ import json
 import uuid
 import pytest
 from mock import patch
-from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
+from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate, PrsDataStorageCreateAttrs
 from app.svc.Services import Services as svc
 
-def test_PrsDataStorage():
-    try:
-        new_dataStorage = PrsDataStorageEntry(conn=svc.ldap.get_write_conn(), data=PrsDataStorageCreate())
-    except:
-        assert False, "Fail while creating new dataStorage."
-
-    try:
-        uuid.UUID(new_dataStorage.id)
-    except:
-        assert False, "DataStorage id is not UUID."
-
-    dataStorage_id = new_dataStorage.id
-    try:
-        dataStorage = PrsDataStorageEntry(conn=svc.ldap.get_read_conn(), id=dataStorage_id)
-    except:
-        assert False, "Fail while load tag."
-
-    assert dataStorage.id == dataStorage_id
+@pytest.mark.parametrize(
+    "payload, status_code, res",
+    [
+        [{}, 201, {id: ""}],
+        [{"attributes": {"prsEntityTypeCode": 1}}, 422, {}],
+        [{"parentId": str(uuid.uuid4())}, 422, {}],
+        [{"attributes": {"prsEntityTypeCode": 1, "prsJsonConfigString": '{"url": "uncorrect url"}'}}, 422, {}],
+        [{"attributes": {"prsEntityTypeCode": 1, "prsJsonConfigString": '{"url": "http://localhost"}'}}, 422, {}]
+        [{"attributes": {"prsEntityTypeCode": 1, "prsJsonConfigString": '{"putUrl": "http://localhost", "getUrl": "http://localhost"}'}}, 422, {}]
+    ],
+)
+def test_dataStorage_create(test_app, payload, status_code, res):
+    response = test_app.post("/dataStorages/", data=json.dumps(payload))
+    assert response.status_code == status_code
+    
