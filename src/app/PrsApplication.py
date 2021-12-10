@@ -17,10 +17,10 @@ class PrsApplication(FastAPI):
         return PrsTagEntry(svc.ldap.get_write_conn(), payload)
 
     def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
-        return PrsDataStorageEntry(svc.ldap.get_write_conn(), payload)
+        return PrsDataStorageEntry(conn=svc.ldap.get_write_conn(), data=payload)
 
     def read_dataStorage(self, id: str) -> PrsDataStorageEntry:
-        return PrsDataStorageEntry(svc.ldap.get_read_conn(), id=id)
+        return PrsDataStorageEntry(conn=svc.ldap.get_read_conn(), id=id)
 
     def read_tag(self, id: str) -> PrsTagEntry:
         return PrsTagEntry(svc.ldap.get_read_conn(), id=id)
