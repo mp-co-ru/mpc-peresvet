@@ -6,9 +6,11 @@ gunicorn
 loguru
 pydantic
 validators
+aiohttp[speedups]
 
 #dev
 pytest
 requests
 mock
 pytest-cov
+pytest-asyncio

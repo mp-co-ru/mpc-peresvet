@@ -13,6 +13,7 @@ uvicorn = "*"
 loguru = "*"
 pydantic = "*"
 validators = "*"
+aiohttp = {version = "*", extras = ["speedups"]}
 
 [requires]
 python_version = "3.9"
