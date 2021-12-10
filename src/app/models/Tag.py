@@ -72,7 +72,6 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
 
 class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    parentId: str = None
     dataSourceId: str = None
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 

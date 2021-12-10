@@ -5,6 +5,7 @@ from ldap3 import LEVEL, DEREF_SEARCH
 import validators
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
+from app.models.Tag import PrsTagEntry, PrsTagCreateAttrs, PrsTagCreate
 
 class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """
@@ -60,11 +61,12 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
         self.tags_cache = {}
         self._read_tags()
+        self.tags_node = "cn=tags,{}".format(self.dn)
     
     def _read_tags(self):
 
         result, _, response, _ = svc.ldap.get_read_conn.search(
-            search_base="cn=tags,{}".format(self.dn),
+            search_base=self.tags_node,
             search_filter='(cn=*)', search_scope=LEVEL, 
             dereference_aliases=DEREF_SEARCH, 
             attributes=['entryUUID', 'prsDataStore'])
@@ -94,5 +96,11 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         data.attributes.cn = 'alerts'
         PrsModelNodeEntry(svc.ldap.get_write_conn(), data=data)
     
-    def reg_tag(self, id: tag_id):
-        
+    def reg_tags(self, ids: Union[str, List[str]]):
+        if isinstance(ids, str):
+            ids = [ids]
+
+        for tag_id in ids:
+            tag = PrsTagEntry(svc.ldap.get_read_conn(), id=tag_id)
+            svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag.dn, name=tag.data.attributes.cn)
+            self.tags_cache[tag.data.attributes['entryUUID']] = tag.data.attributes['prsDataStore']
