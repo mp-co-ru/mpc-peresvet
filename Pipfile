@@ -6,6 +6,12 @@ name = "pypi"
 [packages]
 sphinx-rtd-theme = "*"
 requests = "*"
+docker-compose = "*"
+fastapi = "*"
+ldap3 = "*"
+uvicorn = "*"
+loguru = "*"
+pydantic = "*"
 
 [requires]
 python_version = "3.9"
@@ -21,3 +27,4 @@ sphinxcontrib-httpdomain = "*"
 sphinxcontrib-httpexample = "*"
 sphinx-rtd-theme = "*"
 doc8="*"
+mock="*"

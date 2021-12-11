@@ -1,0 +1,13 @@
+-i https://pypi.org/simple
+ldap3
+fastapi
+uvicorn
+gunicorn
+loguru
+pydantic
+
+#dev
+pytest
+requests
+mock
+pytest-cov

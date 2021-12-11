@@ -1,5 +1,9 @@
 Administration
 ==============
-.. image:: pics/under-construction.png
+Логирование
++++++++++++
 
-This article is under construction.
+Отладка
++++++++
+
+
