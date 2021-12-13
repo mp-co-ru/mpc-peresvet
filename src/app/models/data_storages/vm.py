@@ -2,7 +2,7 @@ import aiohttp
 import json
 from app.models.DataStorage import PrsDataStorageEntry
 import app.main as main
-
+from app.models.Data import PrsData
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
     def __init__(self, **kwargs):
@@ -19,3 +19,5 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         async with self.session.get("{}{}".format(self.get_url, "?match[]=vm_free_disk_space_bytes")) as response:
             return response.status
             
+    async def set_data(self, data: PrsData):
+        pass

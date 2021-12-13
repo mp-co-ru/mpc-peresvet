@@ -78,7 +78,7 @@ class PrsTagCreate(PrsModelNodeCreate):
 class PrsTagEntry(PrsModelNodeEntry):
     payload_class = PrsTagCreate
     objectClass: str = 'prsTag'
-    default_parent_dn: str = "cn=tags,{}".format(svc.config["LDAP_BASE_NODE"])
+    default_parent_dn: str = svc.config["LDAP_TAGS_NODE"]
     
     
     

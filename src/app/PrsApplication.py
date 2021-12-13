@@ -6,12 +6,14 @@ from ldap3 import Reader, ObjectDef, BASE, DEREF_NEVER, SUBTREE
 from app.svc.Services import Services as svc
 from app.models.Tag import PrsTagCreate, PrsTagEntry
 from app.models.DataStorage import PrsDataStorageCreate, PrsDataStorageEntry
+from app.models.Data import PrsData
 
 class PrsApplication(FastAPI):
     def __init__(self, **kwargs):
         super(PrsApplication, self).__init__(**kwargs)
         svc.set_logger()
         svc.set_ldap()
+        svc.set_data_storages()
 
     def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
         return PrsTagEntry(svc.ldap.get_write_conn(), payload)
@@ -43,3 +45,12 @@ class PrsApplication(FastAPI):
         )
 
         return response[0]['dn'] if found else None
+
+    async def data_set(self, data: PrsData):
+        """
+        Метод разбивает массив данных на несколько массивов: один массив - одно хранилище и раздаёт эти массивы на запись 
+        соответствующим хранилищам. Также создаёт метки времени, если их нет и конвертирует их в микросекунды.
+        """
+        data_storages = {}
+        for tag_item in data['data']:
+           pass 

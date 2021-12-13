@@ -7,6 +7,7 @@ loguru
 pydantic
 validators
 aiohttp[speedups]
+python-dateutil
 
 #dev
 pytest
