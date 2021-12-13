@@ -6,6 +6,7 @@ import validators
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
 from app.models.Tag import PrsTagEntry, PrsTagCreateAttrs, PrsTagCreate
+from app.models.Data import PrsData
 
 class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """
@@ -54,7 +55,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
     '''Базовый класс для всех хранилищ'''
     objectClass: str = 'prsDataStorage'
     payload_class = PrsDataStorageCreate
-    default_parent_dn: str = "cn=dataStorages,{}".format(svc.config["LDAP_BASE_NODE"])
+    default_parent_dn: str = svc.config["LDAP_DATASTORAGES_NODE"]
 
     def __init__(self, **kwargs):
         super(PrsDataStorageEntry, self).__init__(**kwargs)
@@ -77,15 +78,17 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         for item in response:
             attrs = dict(item['attributes'])
             self.tags_cache[attrs['entryUUID']] = attrs['prsDataStore']
+            # инициализируем кэш тэгов
+            svc.tags[attrs['entryUUID']]['data_storage'] = self.id
         
         svc.logger.info("Тэги, привязанные к хранилищу `{}`, прочитаны.".format(self.data.attributes.cn))
         
 
-    def connect(self): pass
+    async def connect(self): pass
 
-    def set_data(self, data: List[Any]): pass
+    async def set_data(self, data: PrsData): pass
 
-    def get_data(self, Any):  pass
+    async def get_data(self, Any):  pass
 
     def _add_subnodes(self) -> None:
         data = PrsModelNodeCreate()
