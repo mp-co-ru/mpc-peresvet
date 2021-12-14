@@ -1,11 +1,8 @@
 import json
 import uuid
 import pytest
-from mock import patch
 from app.models.Tag import PrsTagEntry, PrsTagCreate
-from app.svc.ldap.ldap_db import PrsLDAP
 from app.svc.Services import Services as svc
-import ldap3
 
 @pytest.mark.parametrize(
     "payload, status_code, res",
