@@ -1,7 +1,7 @@
 from pydantic import BaseModel, validator, Field, root_validator
-from typing import List, Optional, Union, Any
+from typing import List, Optional, Union, Any, Dict
 import json
-from ldap3 import LEVEL, DEREF_SEARCH
+from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES
 import validators
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
@@ -64,20 +64,30 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         self._read_tags()
         self.tags_node = "cn=tags,{}".format(self.dn)
     
+    def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
+        res = attrs.get['prsDataStore']
+        if res is not None:
+            try:
+                res = json.loads(attrs['prsDataStore'])
+            except:
+                pass
+
+        return res
+
     def _read_tags(self):
 
         result, _, response, _ = svc.ldap.get_read_conn.search(
             search_base=self.tags_node,
             search_filter='(cn=*)', search_scope=LEVEL, 
             dereference_aliases=DEREF_SEARCH, 
-            attributes=['entryUUID', 'prsDataStore'])
+            attributes=[ALL_ATTRIBUTES, 'entryUUID'])
         if not result:
             svc.logger.info("Нет привязанных тэгов к хранилищу '{}'".format(self.data.attributes.cn))
             return
         
         for item in response:
             attrs = dict(item['attributes'])
-            self.tags_cache[attrs['entryUUID']] = attrs['prsDataStore']
+            self.tags_cache[attrs['entryUUID']] = self._format_data_store(attrs)
             # инициализируем кэш тэгов
             svc.tags[attrs['entryUUID']]['data_storage'] = self.id
         
@@ -86,7 +96,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
     async def connect(self): pass
 
-    async def set_data(self, data: PrsData): pass
+    async def set_data(self, data): pass
 
     async def get_data(self, Any):  pass
 
@@ -106,4 +116,4 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         for tag_id in ids:
             tag = PrsTagEntry(svc.ldap.get_read_conn(), id=tag_id)
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag.dn, name=tag.data.attributes.cn)
-            self.tags_cache[tag.data.attributes['entryUUID']] = tag.data.attributes['prsDataStore']
+            self.tags_cache[tag.data.attributes['entryUUID']] = self._format_data_store(tag.data.attributes.dict())

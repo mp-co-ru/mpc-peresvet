@@ -73,6 +73,7 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
 class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
     dataSourceId: str = None
+    dataStorageId: Field(None, title='Id хранилища данных.', description='В случае отсутствия берётся хранилище по умолчанию.')
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 
 class PrsTagEntry(PrsModelNodeEntry):
@@ -80,5 +81,16 @@ class PrsTagEntry(PrsModelNodeEntry):
     objectClass: str = 'prsTag'
     default_parent_dn: str = svc.config["LDAP_TAGS_NODE"]
     
-    
+    def _add_subnodes(self) -> None:
+        super()._add_subnodes()
+
+        system_node = PrsModelNodeCreate()
+        system_node.attributes.cn = 'system'
+        system_node.parentId = self.id
+        node_entry = PrsModelNodeEntry(data=system_node)
+        #TODO: create alias to datastorage, create alias to tag in datastorage
+
+
+    def _add_fields_to_get_response(self, data) -> PrsTagCreate: 
+        pass
     

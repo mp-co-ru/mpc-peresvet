@@ -2,8 +2,7 @@ import json
 import uuid
 import pytest
 import pytest
-from mock import patch
-from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate, PrsDataStorageCreateAttrs
+from app.models.DataStorage import PrsDataStorageCreate
 from app.models.data_storages.vm import PrsVictoriametricsEntry
 from app.svc.Services import Services as svc
 

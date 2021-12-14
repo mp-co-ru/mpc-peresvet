@@ -20,6 +20,7 @@ class Services:
     }
     """
     data_storages: Dict[str, PrsDataStorageEntry]
+    default_data_storage_id: str = None
     """
     Tags cache:
     {
@@ -57,14 +58,20 @@ class Services:
         found, _, response, _ = cls.ldap.get_read_conn().search(
             search_base=cls.config["LDAP_DATASTORAGES_NODE"], 
             search_filter='(cn=*)', search_scope=LEVEL, dereference_aliases=DEREF_NEVER, 
-            attributes=['entryUUID', 'prsEntityTypeCode'])
+            attributes=['entryUUID', 'prsEntityTypeCode', 'prsDefault'])
         if found:
             for item in response:
                 attrs = dict(item['attributes'])
                 if attrs['prsEntityTypeCode'] == 1:
                     new_ds = PrsVictoriametricsEntry(cls.ldap.get_read_conn(), id=attrs['entryUUID'])
                     cls.data_storages[attrs['entryUUID']] = new_ds
+                if attrs['prsDefault']:
+                    cls.default_data_storage_id = attrs['entryUUID']
         else:
             cls.data_storages = {}
+        
+        if cls.data_storages:
+            if cls.default_data_storage_id is None:
+                cls.default_data_storage_id = cls.data_storages.keys()[0]
         
         cls.logger.info("Datastorages loaded.")

@@ -7,6 +7,7 @@ from app.svc.Services import Services as svc
 from app.models.Tag import PrsTagCreate, PrsTagEntry
 from app.models.DataStorage import PrsDataStorageCreate, PrsDataStorageEntry
 from app.models.Data import PrsData
+import app.times as times
 
 class PrsApplication(FastAPI):
     def __init__(self, **kwargs):
@@ -16,16 +17,22 @@ class PrsApplication(FastAPI):
         svc.set_data_storages()
 
     def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
-        return PrsTagEntry(svc.ldap.get_write_conn(), payload)
+        if payload.dataStorageId is None and svc.default_data_storage_id is not None:
+            payload.dataStorageId = svc.default_data_storage_id
+        return PrsTagEntry(payload)
 
     def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
-        return PrsDataStorageEntry(conn=svc.ldap.get_write_conn(), data=payload)
+        if payload.data.attributes.prsDefault:
+            for _, item in svc.data_storages.items():
+                item.modify({"prsDefault": False})
+
+        return PrsDataStorageEntry(data=payload)
 
     def read_dataStorage(self, id: str) -> PrsDataStorageEntry:
-        return PrsDataStorageEntry(conn=svc.ldap.get_read_conn(), id=id)
+        return PrsDataStorageEntry(id=id)
 
     def read_tag(self, id: str) -> PrsTagEntry:
-        return PrsTagEntry(svc.ldap.get_read_conn(), id=id)
+        return PrsTagEntry(id=id)
     
     def get_node_id_by_dn(self, dn: str) -> str:
         found, _, response, _ = svc.ldap.get_read_conn().search(
@@ -51,6 +58,24 @@ class PrsApplication(FastAPI):
         Метод разбивает массив данных на несколько массивов: один массив - одно хранилище и раздаёт эти массивы на запись 
         соответствующим хранилищам. Также создаёт метки времени, если их нет и конвертирует их в микросекунды.
         """
+        now_ts = times.now_int()
+        # словарь значений для записи в разных хранилищах
+        # имеет вид:
+        # {
+        #   "<data_storge_id>": {
+        #        "<tag_id>": [(x, y, q)]
+        #   }            
+        # }
         data_storages = {}
         for tag_item in data['data']:
-           pass 
+            data_storage_id = svc.tags[tag_item.tagId]["data_storage"]
+            data_storages.setdefault(data_storage_id, {})
+            data_storages[data_storage_id].setdefault(tag_item.tagId, [])
+
+            for data_item in tag_item.data:
+                x = (now_ts, times.timestamp_to_int(data_item.x))[data_item.x is not None]
+                data_storages[data_storage_id][tag_item.tagId].append((x, data_item.y, data_item.q))
+
+        # TODO: сделать параллельный запуск записи для хранилищ, а не друг за другом (background_tasks?)
+        for key, value in data_storages.items():
+            await svc.data_storages[key].set_data(value)

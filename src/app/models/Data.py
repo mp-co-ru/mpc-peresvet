@@ -10,7 +10,7 @@ class PrsDataItem(BaseModel):
     q: int = None
 
 class PrsTagData(BaseModel):
-    tag_id: str
+    tagId: str
     data: List[PrsDataItem]
 
 class PrsData(BaseModel):
