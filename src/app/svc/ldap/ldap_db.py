@@ -1,6 +1,6 @@
 import os
 from ldap3 import SCHEMA, Server, Connection, SAFE_SYNC
-from app.svc import Services as svc
+import app.svc.Services as svc
 
 class PrsLDAP:
     

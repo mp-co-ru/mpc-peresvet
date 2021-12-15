@@ -1,7 +1,7 @@
 import os
-from app.api import tags
-from app.api import dataStorages
-from app.api import data
+import app.api.tags as tags
+import app.api.dataStorages as dataStorages
+import app.api.data as data
 from app.PrsApplication import PrsApplication
 
 app = PrsApplication(title='Peresvet')

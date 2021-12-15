@@ -26,5 +26,5 @@ async def test_dataStorage_connect():
     data = PrsDataStorageCreate()
     data.attributes.prsEntityTypeCode = 1
     data.attributes.prsJsonConfigString = json.dumps({"putUrl": "http://vm:8428", "getUrl": "http://vm:8428/api/v1/export"})
-    vm = PrsVictoriametricsEntry(conn=svc.ldap.get_write_conn(), data=data)
+    vm = PrsVictoriametricsEntry(data=data)
     assert await vm.connect() == 200

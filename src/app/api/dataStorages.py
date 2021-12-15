@@ -12,6 +12,6 @@ async def create(payload: PrsDataStorageCreate):
 
 @router.get("/{id}/", response_model=PrsDataStorageCreate)
 async def read_DataStorage(id: str):
-    return main.app.read_dataStorage(id).form_get_response()
+    return main.app.read_dataStorage(id).data
     
 

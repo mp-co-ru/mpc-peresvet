@@ -5,8 +5,8 @@ from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTE
 import validators
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
-from app.models.Tag import PrsTagEntry, PrsTagCreateAttrs, PrsTagCreate
-from app.models.Data import PrsData
+from app.models.Tag import PrsTagEntry
+import app.main as main
 
 class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """
@@ -59,10 +59,9 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
     def __init__(self, **kwargs):
         super(PrsDataStorageEntry, self).__init__(**kwargs)
-
-        self.tags_cache = {}
-        self._read_tags()
+        
         self.tags_node = "cn=tags,{}".format(self.dn)
+        self._read_tags()        
     
     def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
         res = attrs.get['prsDataStore']
@@ -76,7 +75,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
     def _read_tags(self):
 
-        result, _, response, _ = svc.ldap.get_read_conn.search(
+        result, _, response, _ = svc.ldap.get_read_conn().search(
             search_base=self.tags_node,
             search_filter='(cn=*)', search_scope=LEVEL, 
             dereference_aliases=DEREF_SEARCH, 
@@ -85,14 +84,12 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
             svc.logger.info("Нет привязанных тэгов к хранилищу '{}'".format(self.data.attributes.cn))
             return
         
+        tags = []
         for item in response:
-            attrs = dict(item['attributes'])
-            self.tags_cache[attrs['entryUUID']] = self._format_data_store(attrs)
-            # инициализируем кэш тэгов
-            svc.tags[attrs['entryUUID']]['data_storage'] = self.id
+            tags.append(str(item['attributes']['entryUUID']))
+            self.reg_tags(tags)            
         
-        svc.logger.info("Тэги, привязанные к хранилищу `{}`, прочитаны.".format(self.data.attributes.cn))
-        
+        svc.logger.info("Тэги, привязанные к хранилищу `{}`, прочитаны.".format(self.data.attributes.cn))        
 
     async def connect(self): pass
 
@@ -104,16 +101,16 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         data = PrsModelNodeCreate()
         data.parentId = self.id
         data.attributes = PrsModelNodeCreateAttrs(cn='tags')
-        PrsModelNodeEntry(svc.ldap.get_write_conn(), data=data)
+        PrsModelNodeEntry(data=data)
 
         data.attributes.cn = 'alerts'
-        PrsModelNodeEntry(svc.ldap.get_write_conn(), data=data)
+        PrsModelNodeEntry(data=data)
     
     def reg_tags(self, ids: Union[str, List[str]]):
         if isinstance(ids, str):
             ids = [ids]
 
         for tag_id in ids:
-            tag = PrsTagEntry(svc.ldap.get_read_conn(), id=tag_id)
-            svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag.dn, name=tag.data.attributes.cn)
-            self.tags_cache[tag.data.attributes['entryUUID']] = self._format_data_store(tag.data.attributes.dict())
+            tag = PrsTagEntry(id=tag_id)
+            svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag.dn, name=tag.id)
+            main.app.set_tag_cache(tag, "data_storage", self._format_data_store(tag.data.attributes.dict()))
