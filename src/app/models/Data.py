@@ -1,7 +1,5 @@
-from pydantic import BaseModel, validator, Field
-from typing import List, Optional, Union
-
-from app.svc.Services import Services as svc
+from pydantic import BaseModel, Field
+from typing import List, Union
 
 class PrsDataItem(BaseModel):
     x: Union[str, int] = Field(None, title="Метка времени", 

@@ -2,13 +2,15 @@ import aiohttp
 import json
 import copy
 from typing import Dict, Union
+
 from app.models.DataStorage import PrsDataStorageEntry
 from app.svc.Services import Services as svc
+import app.main as main
 
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
     def __init__(self, **kwargs):
-        super(PrsDataStorageEntry, self).__init__(**kwargs)
+        super(PrsVictoriametricsEntry, self).__init__(**kwargs)
 
         self.tag_cache = {}
         js_config = json.loads(self.data.attributes.prsJsonConfigString)
@@ -64,12 +66,12 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
             #            "t2": "v2"
             #        }
             #    }
-            metric_tag = self.tags_cache[key]
+            tag_metric = main.app.get_tag_cache(key, "data_storage")
             for data_item in item:
-                x, y, q = data_item
-                metric_tag['value'] = y
-                metric_tag['timestamp'] = x / 1000
-                formatted_data.append(copy.deepcopy(metric_tag))
+                x, y, _ = data_item
+                tag_metric['value'] = y
+                tag_metric['timestamp'] = x / 1000
+                formatted_data.append(copy.deepcopy(tag_metric))
 
         async with aiohttp.ClientSession() as session:
             resp = await session.post(self.put_url, data=formatted_data)

@@ -1,8 +1,10 @@
 from pydantic import BaseModel, validator, Field
 from typing import List, Optional, Union
+from ldap3 import DEREF_ALWAYS, LEVEL
 
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
+import app.main as main
 
 class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
     """Attributes for request for /tags/ POST"""
@@ -72,8 +74,8 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
 
 class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    dataSourceId: str = None
-    dataStorageId: Field(None, title='Id хранилища данных.', description='В случае отсутствия берётся хранилище по умолчанию.')
+    dataSourceId: str = Field(None, title='Id источника данных.', description='По умолчанию отсутствует.')
+    dataStorageId: str = Field(None, title='Id хранилища данных.', description='В случае отсутствия берётся хранилище по умолчанию.')
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 
 class PrsTagEntry(PrsModelNodeEntry):
@@ -89,8 +91,24 @@ class PrsTagEntry(PrsModelNodeEntry):
         system_node.parentId = self.id
         node_entry = PrsModelNodeEntry(data=system_node)
         #TODO: create alias to datastorage, create alias to tag in datastorage
+        if self.data.dataStorageId is not None:
+            svc.ldap.add_alias(node_entry.dn, main.app.data_storages[self.data.dataStorageId].dn, "dataStorage")
+        #if self.data.dataSourceId is not None:
+        #    svc.ldap.add_alias(node_entry.dn, svc.data_storages[self.data.dataStorageId].dn, "dataStorage")
 
 
-    def _add_fields_to_get_response(self, data) -> PrsTagCreate: 
-        pass
-    
+    def _load_subnodes(self):
+        found, _, response, _ = svc.ldap.get_read_conn().search(
+            search_base="cn=system,{}".format(self.dn), 
+            search_filter='(cn=dataStorage)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            attributes=['entryUUID'])
+        if found:
+            self.data.dataStorageId = str(response[0]['attributes']['entryUUID'])
+
+        found, _, response, _ = svc.ldap.get_read_conn().search(
+            search_base="cn=system,{}".format(self.dn), 
+            search_filter='(cn=dataSource)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            attributes=['entryUUID'])
+        if found:
+            self.data.dataSourceId = str(response[0]['attributes']['entryUUID'])
+            
