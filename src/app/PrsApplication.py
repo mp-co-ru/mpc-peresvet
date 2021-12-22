@@ -19,9 +19,7 @@ class PrsApplication(FastAPI):
         """
         Datastorages cache: 
         {
-            "<ds_id>": <class PrsDataStorageEntry ..
-                tags_cache: {}
-            >
+            "<ds_id>": <class PrsDataStorageEntry ..>
         }
         """
         self.data_storages: Dict[str, PrsDataStorageEntry] = {}
@@ -89,7 +87,12 @@ class PrsApplication(FastAPI):
     def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
         if payload.dataStorageId is None and self.default_data_storage_id is not None:
             payload.dataStorageId = self.default_data_storage_id
-        return PrsTagEntry(payload)
+        new_tag = PrsTagEntry(payload)
+
+        if payload.dataStorageId:
+            self.data_storages[payload.dataStorageId].reg_tags(new_tag.id)
+
+        return new_tag
 
     def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
         if payload.attributes.prsDefault:
