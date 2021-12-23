@@ -1,8 +1,8 @@
-from app.main import app
-
-def test_reg_tag(create_vm_default_datastorage, create_tag):
+def test_reg_tag(test_app, create_vm_default_datastorage, create_tag):
     vm = create_vm_default_datastorage
+    assert test_app.app.data_storages, "There are no datastorages in cache."
     tag = create_tag
-    print(app.tags)
-    assert app.tags[tag.id]['app']['dataStorageId'] == vm.id
-    assert app.tags[tag.id]['data_storage']['metric'] == tag.data.attributes.cn
+    assert test_app.app.tags, "There are no tags in cache."
+    
+    assert test_app.app.tags[tag.id]['app']['dataStorageId'] == vm.id
+    assert test_app.app.tags[tag.id]['data_storage']['metric'] == tag.data.attributes.cn
