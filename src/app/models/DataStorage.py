@@ -1,7 +1,7 @@
-from pydantic import BaseModel, validator, Field, root_validator
-from typing import List, Optional, Union, Any, Dict
+from pydantic import validator, Field, root_validator
+from typing import List, Union, Dict
 import json
-from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES, ALL_OPERATIONAL_ATTRIBUTES
+from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
 import validators
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
@@ -64,10 +64,10 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         self._read_tags()        
     
     def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
-        res = attrs.get['prsDataStore']
+        res = attrs.get['prsStore']
         if res is not None:
             try:
-                res = json.loads(attrs['prsDataStore'])
+                res = json.loads(attrs['prsStore'])
             except:
                 pass
 
@@ -106,11 +106,14 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         data.attributes.cn = 'alerts'
         PrsModelNodeEntry(data=data)
     
-    def reg_tags(self, ids: Union[str, List[str]]):
-        if isinstance(ids, str):
-            ids = [ids]
+    def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
+        if isinstance(tags, (str, PrsTagEntry)):
+            tags = [tags]
 
-        for tag_id in ids:
-            tag = PrsTagEntry(id=tag_id)
-            svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag.dn, name=tag.id)
-            main.app.set_tag_cache(tag, "data_storage", self._format_data_store(tag.data.attributes.dict()))
+        for tag in tags:
+            if isinstance(tag, str):
+                tag_entry = PrsTagEntry(id=tag)
+            else:
+                tag_entry = tag
+            svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
+            main.app.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry.data.attributes.dict()))

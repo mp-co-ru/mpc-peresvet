@@ -3,9 +3,9 @@ import json
 import copy
 from typing import Dict, Union
 
+import app.main as main
 from app.models.DataStorage import PrsDataStorageEntry
 from app.svc.Services import Services as svc
-import app.main as main
 
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
@@ -20,7 +20,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         self.session = aiohttp.ClientSession()
 
     def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
-        data_store = json.loads(attrs['prsDataStore'])
+        data_store = json.loads(attrs['prsStore'])
         if data_store['metric'] is None:
             data_store['metric'] = attrs.cn
         return data_store
@@ -57,7 +57,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         
         formatted_data = []
         for key, item in data.items():
-            # формат prsDataStore у тэга:
+            # формат prsStore у тэга:
             # 
             #   {
             #        "metric": "metric_name",

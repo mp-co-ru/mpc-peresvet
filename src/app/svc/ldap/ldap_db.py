@@ -25,9 +25,9 @@ class PrsLDAP:
         return self._write_conn
 
     def add_alias(self, parent_dn: str, aliased_dn: str, name: str):
-        obj_class = ['alias']
+        obj_class = ['alias', 'extensibleObject']
         new_dn = "cn={},{}".format(name, parent_dn)
-        attrs = {"cn": name}
+        attrs = {"cn": name, "aliasedObjectName": aliased_dn}
         self.get_write_conn().add(new_dn, object_class=obj_class, attributes=attrs)
         svc.Services.logger.debug("Alias added. Parent: {} : alias_to: {}".format(parent_dn, name))
     
