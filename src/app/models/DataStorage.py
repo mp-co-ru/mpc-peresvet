@@ -84,10 +84,9 @@ class PrsDataStorageEntry(m_mn.PrsModelNodeEntry):
             svc.logger.info("Нет привязанных тэгов к хранилищу '{}'".format(self.data.attributes.cn))
             return
         
-        tags = []
         for item in response:
-            tags.append(str(item['attributes']['entryUUID']))
-            self.reg_tags(tags)            
+            tag_entry = m_tag.PrsTagEntry(id=str(item['attributes']['entryUUID']))
+            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry.data.attributes.dict()))
         
         svc.logger.info("Тэги, привязанные к хранилищу `{}`, прочитаны.".format(self.data.attributes.cn))        
 
