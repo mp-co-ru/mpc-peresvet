@@ -4,11 +4,11 @@ import json
 from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
 import validators
 from app.svc.Services import Services as svc
-from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
-from app.models.Tag import PrsTagEntry
-import app.main as main
+import app.models.ModelNode as m_mn
+import app.models.Tag as m_tag
+from app.const import *
 
-class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
+class PrsDataStorageCreateAttrs(m_mn.PrsModelNodeCreateAttrs):
     """
     Атрибуты сущности `dataStorage`.
     Используются при создании/изменении/получении хранилищ данных.
@@ -41,9 +41,9 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         else:
             return values
     
-class PrsDataStorageCreate(PrsModelNodeCreate):
+class PrsDataStorageCreate(m_mn.PrsModelNodeCreate):
     """Request /tags/ POST"""
-    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=0)
+    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=CN_DS_POSTGRESQL)
 
     @validator('parentId', check_fields=False, always=True)
     def parentId_must_be_none(cls, v):
@@ -51,7 +51,7 @@ class PrsDataStorageCreate(PrsModelNodeCreate):
             raise ValueError('parentId must be null for dataStorage')
         return v
 
-class PrsDataStorageEntry(PrsModelNodeEntry):
+class PrsDataStorageEntry(m_mn.PrsModelNodeEntry):
     '''Базовый класс для всех хранилищ'''
     objectClass: str = 'prsDataStorage'
     payload_class = PrsDataStorageCreate
@@ -98,22 +98,23 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
     async def get_data(self, Any):  pass
 
     def _add_subnodes(self) -> None:
-        data = PrsModelNodeCreate()
+        data = m_mn.PrsModelNodeCreate()
         data.parentId = self.id
-        data.attributes = PrsModelNodeCreateAttrs(cn='tags')
-        PrsModelNodeEntry(data=data)
+        data.attributes = m_mn.PrsModelNodeCreateAttrs(cn='tags')
+        m_mn.PrsModelNodeEntry(data=data)
 
         data.attributes.cn = 'alerts'
-        PrsModelNodeEntry(data=data)
+        m_mn.PrsModelNodeEntry(data=data)
     
-    def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
-        if isinstance(tags, (str, PrsTagEntry)):
+    def reg_tags(self, tags: Union[m_tag.PrsTagEntry, str, List[str], List[m_tag.PrsTagEntry]]):
+        if isinstance(tags, (str, m_tag.PrsTagEntry)):
             tags = [tags]
 
         for tag in tags:
             if isinstance(tag, str):
-                tag_entry = PrsTagEntry(id=tag)
+                tag_entry = m_tag.PrsTagEntry(id=tag)
             else:
                 tag_entry = tag
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
-            main.app.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry.data.attributes.dict()))
+
+            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry.data.attributes.dict()))

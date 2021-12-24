@@ -1,6 +1,6 @@
 import os
 from logging import Logger
-from typing import Dict
+from typing import Dict, Any
 from ldap3 import LEVEL, DEREF_NEVER
 from app.svc.logger.PrsLogger import PrsLogger
 import app.svc.ldap.ldap_db as ld
@@ -17,6 +17,34 @@ class Services:
         "LDAP_OBJECTS_NODE": "cn=objects,{}".format(os.getenv("LDAP_BASE_NODE", "cn=prs")),
     }
 
+    """
+    Datastorages cache: 
+    {
+        "<ds_id>": <class PrsDataStorageEntry ..>
+    }
+    """
+    data_storages: Dict[str, Any] = {}
+    default_data_storage_id: str = None
+    """
+    Tags cache:
+    {
+        "<tag_id>": {
+            "app": {
+                "dataStorageId": "<ds_id>"
+            }
+            "data_storage": Any(some_value)
+        }
+    }
+    Кэшем пользуется не только само приложение, но и разные сущности.
+    То есть к ключу с id тэга сущности могут привязывать свои кэши.
+    Для этого они вызывают метод set_tag_cache.
+    Для получения нужного значения - get_tag_cache.
+    Для удобства примем, что каждая сущность создаёт кэш с ключом, имя которого - похоже на имя сущности, а значение - любое нужное сущности.
+    Приложение создаёт ключ "app", PrsDataStorageEntry создает ключ "data_storage"... 
+
+    """
+    tags: Dict[str, Dict[str, Any]] = {}
+
     @classmethod
     def set_logger(cls):
         cls.logger = PrsLogger.make_logger()
@@ -25,4 +53,15 @@ class Services:
     def set_ldap(cls):
         cls.ldap = ld.PrsLDAP(os.getenv("LDAP_HOST"), int(os.getenv("LDAP_PORT")), os.getenv("LDAP_USER"), os.getenv("LDAP_PASSWORD")) 
 
-    
+    @classmethod
+    def set_tag_cache(cls, tag: Any, key: str = None, value: Any = None):
+        """
+        Метод используется приложением и разными сущностями для формирования кэша тэгов.
+        Методу передаётся PrsTagEntry, чтобы приложение могло сформировать свои кэши для тэга.
+        Для того, чтобы при старте приложения не читать два раза все тэги, формируя кэш тэгов в приложении
+        и кэши тэгов в хранилищах данных, общий для всех кэш тэгов в приложении формируется при старте приложения
+        во время считывания хранилищ данных: они вызывают этот метод, что приводит к формированию кэша тэгов.
+        """
+        cls.tags.setdefault(tag.id, {"app": {"dataStorageId": tag.data.dataStorageId}})
+        if key:
+            cls.tags[tag.id][key] = value
