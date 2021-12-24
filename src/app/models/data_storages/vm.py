@@ -4,10 +4,10 @@ import copy
 from typing import Dict, Union
 
 import app.main as main
-from app.models.DataStorage import PrsDataStorageEntry
+import app.models.DataStorage as m_ds 
 from app.svc.Services import Services as svc
 
-class PrsVictoriametricsEntry(PrsDataStorageEntry):
+class PrsVictoriametricsEntry(m_ds.PrsDataStorageEntry):
 
     def __init__(self, **kwargs):
         super(PrsVictoriametricsEntry, self).__init__(**kwargs)
@@ -20,9 +20,12 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         self.session = aiohttp.ClientSession()
 
     def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
-        data_store = json.loads(attrs['prsStore'])
-        if data_store['metric'] is None:
-            data_store['metric'] = attrs.cn
+        if attrs['prsStore']:
+            data_store = json.loads(attrs['prsStore'])
+        else:
+            data_store = {}
+        if data_store.get('metric') is None:
+            data_store['metric'] = attrs['cn']
         return data_store
 
     async def connect(self) -> int:
@@ -30,10 +33,12 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
             return response.status
             
     async def set_data(self, data):
-        #{
+        # data:
+        # {
         #        "<tag_id>": [(x, y, q)]
-        #}  
+        # }  
         # 
+        # method forms archive:
         # [
         #     {
         #         "metric": "sys.cpu.nice",
@@ -73,6 +78,5 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
                 tag_metric['timestamp'] = x / 1000
                 formatted_data.append(copy.deepcopy(tag_metric))
 
-        async with aiohttp.ClientSession() as session:
-            resp = await session.post(self.put_url, data=formatted_data)
-            svc.logger.debug("Set data status: {}".format(resp.status))
+        resp = await self.session.post(self.put_url, data=formatted_data)
+        svc.logger.debug("Set data status: {}".format(resp.status))
