@@ -4,11 +4,11 @@ import json
 from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
 import validators
 from app.svc.Services import Services as svc
-import app.models.ModelNode as m_mn
-import app.models.Tag as m_tag
+from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeEntry, PrsModelNodeCreate
+from app.models.Tag import PrsTagEntry
 from app.const import *
 
-class PrsDataStorageCreateAttrs(m_mn.PrsModelNodeCreateAttrs):
+class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """
     Атрибуты сущности `dataStorage`.
     Используются при создании/изменении/получении хранилищ данных.
@@ -41,7 +41,7 @@ class PrsDataStorageCreateAttrs(m_mn.PrsModelNodeCreateAttrs):
         else:
             return values
     
-class PrsDataStorageCreate(m_mn.PrsModelNodeCreate):
+class PrsDataStorageCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
     attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=CN_DS_POSTGRESQL)
 
@@ -51,7 +51,7 @@ class PrsDataStorageCreate(m_mn.PrsModelNodeCreate):
             raise ValueError('parentId must be null for dataStorage')
         return v
 
-class PrsDataStorageEntry(m_mn.PrsModelNodeEntry):
+class PrsDataStorageEntry(PrsModelNodeEntry):
     '''Базовый класс для всех хранилищ'''
     objectClass: str = 'prsDataStorage'
     payload_class = PrsDataStorageCreate
@@ -63,11 +63,11 @@ class PrsDataStorageEntry(m_mn.PrsModelNodeEntry):
         self.tags_node = "cn=tags,{}".format(self.dn)
         self._read_tags()        
     
-    def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
-        res = attrs.get['prsStore']
+    def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
+        res = tag.data.attributes.prsStore
         if res is not None:
             try:
-                res = json.loads(attrs['prsStore'])
+                res = json.loads(tag.data.attributes.prsStore)
             except:
                 pass
 
@@ -85,8 +85,8 @@ class PrsDataStorageEntry(m_mn.PrsModelNodeEntry):
             return
         
         for item in response:
-            tag_entry = m_tag.PrsTagEntry(id=str(item['attributes']['entryUUID']))
-            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry.data.attributes.dict()))
+            tag_entry = PrsTagEntry(id=str(item['attributes']['entryUUID']))
+            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry))
         
         svc.logger.info("Тэги, привязанные к хранилищу `{}`, прочитаны.".format(self.data.attributes.cn))        
 
@@ -97,23 +97,23 @@ class PrsDataStorageEntry(m_mn.PrsModelNodeEntry):
     async def get_data(self, Any):  pass
 
     def _add_subnodes(self) -> None:
-        data = m_mn.PrsModelNodeCreate()
+        data = PrsModelNodeCreate()
         data.parentId = self.id
-        data.attributes = m_mn.PrsModelNodeCreateAttrs(cn='tags')
-        m_mn.PrsModelNodeEntry(data=data)
+        data.attributes = PrsModelNodeCreateAttrs(cn='tags')
+        PrsModelNodeEntry(data=data)
 
         data.attributes.cn = 'alerts'
-        m_mn.PrsModelNodeEntry(data=data)
+        PrsModelNodeEntry(data=data)
     
-    def reg_tags(self, tags: Union[m_tag.PrsTagEntry, str, List[str], List[m_tag.PrsTagEntry]]):
-        if isinstance(tags, (str, m_tag.PrsTagEntry)):
+    def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
+        if isinstance(tags, (str, PrsTagEntry)):
             tags = [tags]
 
         for tag in tags:
             if isinstance(tag, str):
-                tag_entry = m_tag.PrsTagEntry(id=tag)
+                tag_entry = PrsTagEntry(id=tag)
             else:
                 tag_entry = tag
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
 
-            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry.data.attributes.dict()))
+            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry))

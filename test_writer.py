@@ -41,7 +41,7 @@ if __name__ == '__main__':
     args = sys.argv[1:]
 
     dict_args = dict(s.split('=') for s in args)
-    dict_args.setdefault("h", "localhost")
+    dict_args.setdefault("h", "localhost:4242")
     dict_args.setdefault("m", "temp")
     dict_args.setdefault("f", 2)
     dict_args["f"] = int(dict_args["f"])

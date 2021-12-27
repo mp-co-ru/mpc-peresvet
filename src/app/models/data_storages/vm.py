@@ -3,11 +3,11 @@ import json
 import copy
 from typing import Dict, Union
 
-import app.main as main
-import app.models.DataStorage as m_ds 
+from app.models.DataStorage import PrsDataStorageEntry
+from app.models.Tag import PrsTagEntry 
 from app.svc.Services import Services as svc
 
-class PrsVictoriametricsEntry(m_ds.PrsDataStorageEntry):
+class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
     def __init__(self, **kwargs):
         super(PrsVictoriametricsEntry, self).__init__(**kwargs)
@@ -19,13 +19,18 @@ class PrsVictoriametricsEntry(m_ds.PrsDataStorageEntry):
 
         self.session = aiohttp.ClientSession()
 
-    def _format_data_store(self, attrs: Dict) -> Union[None, Dict]:
-        if attrs['prsStore']:
-            data_store = json.loads(attrs['prsStore'])
+    def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
+        if tag.data.attributes.prsStore:
+            data_store = json.loads(tag.data.attributes.prsStore)
         else:
             data_store = {}
         if data_store.get('metric') is None:
-            data_store['metric'] = attrs['cn']
+            data_store['metric'] = (tag.data.attributes.cn, tag.data.attributes.cn[0])[isinstance(tag.data.attributes.cn, list)] # cn is array of str!
+
+            # имя метрики не может начинаться с цифр и не может содержать дефисов
+            if tag.id == data_store['metric']:
+                data_store['metric'] = "t_{}".format(data_store['metric'].replace('-', '_'))
+
         return data_store
 
     async def connect(self) -> int:
@@ -71,12 +76,14 @@ class PrsVictoriametricsEntry(m_ds.PrsDataStorageEntry):
             #            "t2": "v2"
             #        }
             #    }
-            tag_metric = main.app.get_tag_cache(key, "data_storage")
+            tag_metric = svc.get_tag_cache(key, "data_storage")
             for data_item in item:
                 x, y, _ = data_item
                 tag_metric['value'] = y
-                tag_metric['timestamp'] = x / 1000
+                tag_metric['timestamp'] = round(x / 1000)
                 formatted_data.append(copy.deepcopy(tag_metric))
 
-        resp = await self.session.post(self.put_url, data=formatted_data)
+        resp = await self.session.post(self.put_url, json=formatted_data)
         svc.logger.debug("Set data status: {}".format(resp.status))
+
+        return resp
