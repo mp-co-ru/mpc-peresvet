@@ -8,6 +8,7 @@ router = APIRouter()
 
 @router.post("/", status_code=200)
 async def data_set(payload: Data.PrsData):
-    await main.app.data_set(payload)
+    return await main.app.data_set(payload)
+
 
     

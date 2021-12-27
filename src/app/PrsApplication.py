@@ -28,10 +28,6 @@ class PrsApplication(FastAPI):
         if ds.data.attributes.prsDefault:
             svc.default_data_storage_id = ds.id
     
-    def get_tag_cache(self, tag_id: str, key: str) -> Any:
-        if self.tags.get(tag_id) is not None:
-            return self.tags[tag_id].get(key)
-
     def _set_data_storages(self):
         svc.logger.info("Start load datastorages...")
         
@@ -48,10 +44,7 @@ class PrsApplication(FastAPI):
                 
                 new_ds = PrsVictoriametricsEntry(id=attrs['entryUUID'])
                 self._reg_data_storage_in_cache(new_ds)
-
-                if attrs['prsDefault']:
-                    svc.default_data_storage_id = attrs['entryUUID']
-        
+                
         if svc.data_storages:
             if svc.default_data_storage_id is None:
                 svc.default_data_storage_id = svc.data_storages.keys()[0]
@@ -132,7 +125,7 @@ class PrsApplication(FastAPI):
         # }
         data_storages = {}
         for tag_item in data.data:
-            data_storage_id = svc.tags[tag_item.tagId]["data_storage"]
+            data_storage_id = svc.tags[tag_item.tagId]['app']["dataStorageId"]
             if data_storages.get(data_storage_id) is None:
                 data_storages[data_storage_id] = {}
             data_storages[data_storage_id].setdefault(tag_item.tagId, [])
@@ -142,5 +135,13 @@ class PrsApplication(FastAPI):
                 data_storages[data_storage_id][tag_item.tagId].append((x, data_item.y, data_item.q))
 
         # TODO: сделать параллельный запуск записи для хранилищ, а не друг за другом (background_tasks?)
+        resp = {}
         for key, value in data_storages.items():
-            await svc.data_storages[key].set_data(value)
+            resp[key] = await svc.data_storages[key].set_data(value)
+
+        #TODO: подумать, как возвращать результат
+        for key, value in resp.items():
+            if not value.ok:
+                return value
+
+        return

@@ -4,12 +4,3 @@ services:
   peresvet:
     environment:
       PRS_LOG_LEVEL: DEBUG
-
-  ldap:
-    ports:
-      - 389:389
-
-  victoriametrics:
-    ports:
-      - 4242:4242
-      - 8428:8428

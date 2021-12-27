@@ -65,3 +65,8 @@ class Services:
         cls.tags.setdefault(tag.id, {"app": {"dataStorageId": tag.data.dataStorageId}})
         if key:
             cls.tags[tag.id][key] = value
+
+    @classmethod
+    def get_tag_cache(cls, tag_id: str, key: str) -> Any:
+        if cls.tags.get(tag_id) is not None:
+            return cls.tags[tag_id].get(key)
