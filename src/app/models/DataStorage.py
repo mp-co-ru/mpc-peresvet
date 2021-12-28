@@ -116,4 +116,10 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
                 tag_entry = tag
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
 
-            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry))
+            tag_store = self._format_data_store(tag_entry)
+            if (tag_entry.data.attributes.prsStore is None) or (not tag_store == json.loads(tag_entry.data.attributes.prsStore)):
+                tag_entry.modify({
+                    "prsStore": json.dumps(tag_store)
+                })
+
+            svc.set_tag_cache(tag_entry, "data_storage", tag_store)

@@ -1,6 +1,8 @@
 import pytest
 import json 
 
+from fastapi import Response
+
 from app.models.DataStorage import PrsDataStorageCreate
 from app.models.Data import PrsData
 from app.svc.Services import Services as svc
@@ -18,7 +20,8 @@ async def test_data_set(test_app, monkeypatch):
     vm = test_app.app.create_dataStorage(data)
 
     async def mock_set_data(*args):
-        assert args[0] == {tag.id: [(0, 0, 0)]}    
+        assert args[0] == {tag.id: [(0, 0, 0)]}
+        return Response(content="ok", status_code=200)
 
     monkeypatch.setattr(vm, 'set_data', mock_set_data)
 
