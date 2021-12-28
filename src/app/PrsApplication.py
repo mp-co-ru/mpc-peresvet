@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 
 from ldap3 import BASE, DEREF_ALWAYS, DEREF_NEVER, SUBTREE, LEVEL
 from typing import Dict, Any
@@ -110,7 +110,7 @@ class PrsApplication(FastAPI):
 
         return response[0]['dn'] if found else None
 
-    async def data_set(self, data: PrsData):
+    async def data_set(self, data: PrsData) -> Response:
         """
         Метод разбивает массив данных на несколько массивов: один массив - одно хранилище и раздаёт эти массивы на запись 
         соответствующим хранилищам. Также создаёт метки времени, если их нет и конвертирует их в микросекунды.
@@ -141,7 +141,7 @@ class PrsApplication(FastAPI):
 
         #TODO: подумать, как возвращать результат
         for key, value in resp.items():
-            if not value.ok:
+            if value.status_code >= 400:
                 return value
 
-        return
+        return Response(status_code=200)

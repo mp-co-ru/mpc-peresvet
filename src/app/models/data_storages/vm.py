@@ -2,6 +2,7 @@ import aiohttp
 import json
 import copy
 from typing import Dict, Union
+from fastapi import Response
 
 from app.models.DataStorage import PrsDataStorageEntry
 from app.models.Tag import PrsTagEntry 
@@ -84,6 +85,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
                 formatted_data.append(copy.deepcopy(tag_metric))
 
         resp = await self.session.post(self.put_url, json=formatted_data)
+        
         svc.logger.debug("Set data status: {}".format(resp.status))
 
-        return resp
+        return Response(content=resp.content, status_code=resp.status)
