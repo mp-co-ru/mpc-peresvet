@@ -2,7 +2,7 @@ from pydantic import validator, Field, root_validator
 from typing import List, Union, Dict
 import json
 from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
-import validators
+from urllib.parse import urlparse
 
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeEntry, PrsModelNodeCreate
@@ -22,6 +22,14 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
 
     @root_validator
     def check_vm_config(cls, values):
+        
+        def uri_validator(x):
+            try:
+                result = urlparse(x)
+                return all([result.scheme, result.netloc])
+            except:
+                return False
+
         type_code = values.get('prsEntityTypeCode')
         if type_code == 1:
             config = values.get('prsJsonConfigString')
@@ -30,7 +38,7 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
                     js = json.loads(config)
                     put_url = js['putUrl']
                     get_url = js['getUrl']
-                    if validators.url(put_url) and validators.url(get_url):
+                    if uri_validator(put_url) and uri_validator(get_url):
                        return values
                 except:
                     pass
