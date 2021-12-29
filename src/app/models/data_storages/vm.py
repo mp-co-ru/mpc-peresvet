@@ -88,4 +88,4 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         
         svc.logger.debug("Set data status: {}".format(resp.status))
 
-        return Response(content=resp.content, status_code=resp.status)
+        return Response(content=str(resp.content), status_code=resp.status)

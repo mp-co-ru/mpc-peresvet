@@ -131,7 +131,10 @@ class PrsApplication(FastAPI):
             data_storages[data_storage_id].setdefault(tag_item.tagId, [])
 
             for data_item in tag_item.data:
-                x = (now_ts, times.timestamp_to_int(data_item.x))[data_item.x is not None]
+                if data_item.x is None: 
+                    x = now_ts
+                else:
+                    times.timestamp_to_int(data_item.x)
                 data_storages[data_storage_id][tag_item.tagId].append((x, data_item.y, data_item.q))
 
         # TODO: сделать параллельный запуск записи для хранилищ, а не друг за другом (background_tasks?)
