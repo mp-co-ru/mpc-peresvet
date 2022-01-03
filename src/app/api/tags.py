@@ -14,5 +14,3 @@ async def create(payload: Tag.PrsTagCreate):
 @router.get("/{id}/", response_model=Tag.PrsTagCreate)
 async def read_tag(id: str):
     return main.app.read_tag(id).data
-    
-
