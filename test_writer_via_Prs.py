@@ -40,8 +40,8 @@ def main(args):
 
 if __name__ == '__main__':
     print("Тестовый скрипт записи данных в TSDB по протоколу HTTP OpenTSDB.")
-    print("Запуск: python3 test_writer.py h=<server> m=<metric_name> f=<frequency>.")
-    print("Значения по умолчанию: h=localhost:4242 m=temp f=2.")
+    print("Запуск: python3 test_writer.py h=<server> t=<tagId> f=<frequency>.")
+    print("Значения по умолчанию: h=localhost:8002 f=2.")
     print("Порядок аргументов не важен.")
 
     logging.basicConfig(level=logging.DEBUG)
@@ -50,7 +50,6 @@ if __name__ == '__main__':
 
     dict_args = dict(s.split('=') for s in args)
     dict_args.setdefault("h", "localhost:8002")
-    dict_args.setdefault("m", "temp")
     dict_args.setdefault("f", 2)
     dict_args["f"] = int(dict_args["f"])
 

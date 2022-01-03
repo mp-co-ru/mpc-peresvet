@@ -134,7 +134,7 @@ class PrsApplication(FastAPI):
                 if data_item.x is None: 
                     x = now_ts
                 else:
-                    times.timestamp_to_int(data_item.x)
+                    x = times.timestamp_to_int(data_item.x)
                 data_storages[data_storage_id][tag_item.tagId].append((x, data_item.y, data_item.q))
 
         # TODO: сделать параллельный запуск записи для хранилищ, а не друг за другом (background_tasks?)
@@ -147,4 +147,4 @@ class PrsApplication(FastAPI):
             if value.status_code >= 400:
                 return value
 
-        return Response(status_code=200)
+        return Response(status_code=204)
