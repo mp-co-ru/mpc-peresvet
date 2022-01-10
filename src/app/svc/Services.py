@@ -4,10 +4,12 @@ from typing import Dict, Any
 from ldap3 import LEVEL, DEREF_NEVER
 from app.svc.logger.PrsLogger import PrsLogger
 import app.svc.ldap.ldap_db as ld
+from app.svc.websockets import PrsWebsocketConnectionManager
 
 class Services:
     logger: Logger
     ldap: ld.PrsLDAP
+    ws_pool: PrsWebsocketConnectionManager
     
     config = {
         "LDAP_BASE_NODE": os.getenv("LDAP_BASE_NODE", "cn=prs"),
