@@ -4,12 +4,14 @@ from app.PrsApplication import PrsApplication
 import app.api.tags as tags
 import app.api.dataStorages as dataStorages
 import app.api.data as data
+import app.api.connectors as connectors
 
 app = PrsApplication(title='Peresvet')
 
 app.include_router(tags.router, prefix="/tags", tags=["tags"])
 app.include_router(dataStorages.router, prefix="/dataStorages", tags=["dataStorages"])
 app.include_router(data.router, prefix="/data", tags=["data"])
+app.include_router(connectors.router, prefix="/connectors", tags=["connectors"])
 
 @app.websocket("/{connector_id}")
 async def websocket_endpoint(websocket: WebSocket, connector_id: int):
