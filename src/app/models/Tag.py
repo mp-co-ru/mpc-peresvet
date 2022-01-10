@@ -72,7 +72,7 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
 
 class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    dataSourceId: str = Field(None, title='Id источника данных.', description='По умолчанию отсутствует.')
+    connectorId: str = Field(None, title='Id коннектора, являющегося поставщиком данных для тэга.', description='По умолчанию отсутствует.')
     dataStorageId: str = Field(None, title='Id хранилища данных.', description='В случае отсутствия берётся хранилище по умолчанию.')
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 
@@ -102,8 +102,8 @@ class PrsTagEntry(PrsModelNodeEntry):
 
         found, _, response, _ = svc.ldap.get_read_conn().search(
             search_base="cn=system,{}".format(self.dn), 
-            search_filter='(objectClass=prsDataSource)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            search_filter='(objectClass=prsConnector)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
             attributes=['entryUUID'])
         if found:
-            self.data.dataSourceId = str(response[0]['attributes']['entryUUID'])
+            self.data.connectorId = str(response[0]['attributes']['entryUUID'])
             

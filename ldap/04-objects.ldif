@@ -12,12 +12,12 @@ objectClass: prsModelNode
 description: This node stores data storages
 cn: dataStorages
 
-# add dataSources node
-dn: cn=dataSources,cn=prs
+# add connectors node
+dn: cn=connectors,cn=prs
 changetype: add
 objectClass: prsModelNode
-description: This node stores data sources
-cn: dataSources
+description: This node stores connectors
+cn: connectors
 
 # add templates node
 dn: cn=templates,cn=prs
