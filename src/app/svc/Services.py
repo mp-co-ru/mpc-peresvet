@@ -7,16 +7,18 @@ import app.svc.ldap.ldap_db as ld
 from app.svc.websockets import PrsWebsocketConnectionManager
 
 class Services:
+    default_base_node: str = 'cn=prs'
+
     logger: Logger
     ldap: ld.PrsLDAP
     ws_pool: PrsWebsocketConnectionManager
     
     config = {
-        "LDAP_BASE_NODE": os.getenv("LDAP_BASE_NODE", "cn=prs"),
-        "LDAP_TAGS_NODE": "cn=tags,{}".format(os.getenv("LDAP_BASE_NODE", "cn=prs")),
-        "LDAP_DATASTORAGES_NODE": "cn=dataStorages,{}".format(os.getenv("LDAP_BASE_NODE", "cn=prs")),
-        "LDAP_DATASOURCES_NODE": "cn=dataSources,{}".format(os.getenv("LDAP_BASE_NODE", "cn=prs")),
-        "LDAP_OBJECTS_NODE": "cn=objects,{}".format(os.getenv("LDAP_BASE_NODE", "cn=prs")),
+        "LDAP_BASE_NODE": os.getenv("LDAP_BASE_NODE", default_base_node),
+        "LDAP_TAGS_NODE": "cn=tags,{}".format(os.getenv("LDAP_BASE_NODE", default_base_node)),
+        "LDAP_DATASTORAGES_NODE": "cn=dataStorages,{}".format(os.getenv("LDAP_BASE_NODE", default_base_node)),
+        "LDAP_CONNECTORS_NODE": "cn=connectors,{}".format(os.getenv("LDAP_BASE_NODE", default_base_node)),
+        "LDAP_OBJECTS_NODE": "cn=objects,{}".format(os.getenv("LDAP_BASE_NODE", default_base_node)),
     }
 
     """

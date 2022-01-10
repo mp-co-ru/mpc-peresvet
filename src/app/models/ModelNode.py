@@ -106,7 +106,7 @@ class PrsModelNodeEntry:
 
     _add_subnodes - добавление дочерних узлов 
     _add_fields_to_get_response - добавление к стандартному ответу, отдаваемому клиенту при его запросе get дополнительных атрибутов.
-    Например, тэг должен в parentId отдать id родительского объекта или None, а также добавить к ответу атрибуты dataSourceId и dataStorageId
+    Например, тэг должен в parentId отдать id родительского объекта или None, а также добавить к ответу атрибуты connectorId и dataStorageId
     """
     objectClass: str = 'prsModelNode'
     default_parent_dn: str = svc.config["LDAP_BASE_NODE"]
