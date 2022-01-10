@@ -2,6 +2,7 @@ import json
 import uuid
 import pytest
 from app.models.Tag import PrsTagEntry, PrsTagCreate
+from app.models.Connector import PrsConnectorEntry, PrsConnectorCreate
 from app.svc.Services import Services as svc
 
 @pytest.mark.parametrize(
@@ -48,7 +49,7 @@ def test_f_35_cn_as_uuid():
     assert new_tag.data.attributes.cn == new_tag.id
 
 def test_add_tag_with_multiple_cn():
-    data=PrsTagCreate()
+    data = PrsTagCreate()
     data.attributes.cn = ["имя 1", "имя 2"]
     try:
         new_tag = PrsTagEntry(data=data)
@@ -57,3 +58,14 @@ def test_add_tag_with_multiple_cn():
     
     assert new_tag.data.attributes.cn == data.attributes.cn
     
+def test_tag_connector_link():
+    conn_data = PrsConnectorCreate()
+    new_conn = PrsConnectorEntry(data=conn_data)
+
+    tag_data = PrsTagCreate(connectorId=new_conn.id)
+    new_tag = PrsTagEntry(tag_data)
+
+    assert new_tag.data.connectorId == new_conn.id
+
+    reload_tag = PrsTagEntry(id=new_tag.id)
+    assert reload_tag.data.connectorId == new_conn.id

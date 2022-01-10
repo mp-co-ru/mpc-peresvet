@@ -8,6 +8,7 @@ from app.models.Tag import PrsTagEntry, PrsTagCreate
 from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.data_storages.vm import PrsVictoriametricsEntry
 from app.models.Data import PrsData
+from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
 import app.times as times
 from app.const import *
 
@@ -61,6 +62,10 @@ class PrsApplication(FastAPI):
         new_tag = PrsTagEntry(payload)
 
         svc.data_storages[payload.dataStorageId].reg_tags(new_tag)
+
+        if payload.connectorId is not None:
+            connector = PrsConnectorEntry(payload.connectorId)
+            connector.reg_tags(new_tag)
 
         svc.logger.info("Тэг '{}'({}) создан.".format(new_tag.data.attributes.cn, new_tag.id))
 
@@ -148,3 +153,12 @@ class PrsApplication(FastAPI):
                 return value
 
         return Response(status_code=204)
+
+    def create_connector(self, payload: PrsConnectorCreate) -> PrsConnectorEntry:
+        new_connector = PrsConnectorEntry()
+        svc.logger.info("Коннектор '{}'({}) создан.".format(new_connector.data.attributes.cn, new_connector.id))
+
+        return new_connector
+
+    def read_connector(self, id: str) -> PrsConnectorEntry:
+        return PrsConnectorEntry(id=id)
