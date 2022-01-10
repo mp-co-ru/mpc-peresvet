@@ -1,5 +1,5 @@
-from pydantic import BaseModel, validator, Field
-from typing import List, Optional, Union
+from pydantic import Field
+from ldap3 import DEREF_ALWAYS, LEVEL
 
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
@@ -72,14 +72,38 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
 
 class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    parentId: str = None
-    dataSourceId: str = None
+    dataSourceId: str = Field(None, title='Id источника данных.', description='По умолчанию отсутствует.')
+    dataStorageId: str = Field(None, title='Id хранилища данных.', description='В случае отсутствия берётся хранилище по умолчанию.')
     attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
 
 class PrsTagEntry(PrsModelNodeEntry):
     payload_class = PrsTagCreate
     objectClass: str = 'prsTag'
-    default_parent_dn: str = "cn=tags,{}".format(svc.config["LDAP_BASE_NODE"])
+    default_parent_dn: str = svc.config["LDAP_TAGS_NODE"]
     
-    
-    
+    def _add_subnodes(self) -> None:
+        super()._add_subnodes()
+
+        system_node = PrsModelNodeCreate()
+        system_node.attributes.cn = 'system'
+        system_node.parentId = self.id
+        node_entry = PrsModelNodeEntry(data=system_node)
+        #TODO: create alias to datastorage, create alias to tag in datastorage
+        if self.data.dataStorageId is not None:
+            svc.ldap.add_alias(node_entry.dn, svc.data_storages[self.data.dataStorageId].dn, "dataStorage")        
+
+    def _load_subnodes(self):
+        found, _, response, _ = svc.ldap.get_read_conn().search(
+            search_base="cn=system,{}".format(self.dn), 
+            search_filter='(objectClass=prsDataStorage)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            attributes=['entryUUID'])
+        if found:
+            self.data.dataStorageId = str(response[0]['attributes']['entryUUID'])
+
+        found, _, response, _ = svc.ldap.get_read_conn().search(
+            search_base="cn=system,{}".format(self.dn), 
+            search_filter='(objectClass=prsDataSource)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            attributes=['entryUUID'])
+        if found:
+            self.data.dataSourceId = str(response[0]['attributes']['entryUUID'])
+            

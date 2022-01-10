@@ -4,7 +4,3 @@ services:
   peresvet:
     environment:
       PRS_LOG_LEVEL: DEBUG
-
-  ldap:
-    ports:
-      - 389:389
