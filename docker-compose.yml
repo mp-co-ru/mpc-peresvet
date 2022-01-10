@@ -39,8 +39,10 @@ services:
     image: victoriametrics/victoria-metrics
     container_name: vm
     restart: always
+    command: -opentsdbHTTPListenAddr=:4242    
     ports:
       - 8428:8428
+      - 4242:4242
     #volumes:
     #  - ./vm-data:/victoria-metrics-data
     environment:

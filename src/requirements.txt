@@ -5,9 +5,13 @@ uvicorn
 gunicorn
 loguru
 pydantic
+validators
+aiohttp[speedups]
+python-dateutil
 
 #dev
 pytest
 requests
 mock
 pytest-cov
+pytest-asyncio

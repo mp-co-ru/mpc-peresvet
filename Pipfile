@@ -12,6 +12,9 @@ ldap3 = "*"
 uvicorn = "*"
 loguru = "*"
 pydantic = "*"
+validators = "*"
+aiohttp = {version = "*", extras = ["speedups"]}
+python-dateutil = "*"
 
 [requires]
 python_version = "3.9"

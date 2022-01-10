@@ -1,11 +1,8 @@
 import json
 import uuid
 import pytest
-from mock import patch
 from app.models.Tag import PrsTagEntry, PrsTagCreate
-from app.svc.ldap.ldap_db import PrsLDAP
 from app.svc.Services import Services as svc
-import ldap3
 
 @pytest.mark.parametrize(
     "payload, status_code, res",
@@ -29,7 +26,7 @@ def test_tag_get(test_app):
 
 def test_PrsTag():
     try:
-        new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
+        new_tag = PrsTagEntry(data=PrsTagCreate())
     except:
         assert False, "Fail while creating new tag."
 
@@ -40,21 +37,21 @@ def test_PrsTag():
 
     tag_id = new_tag.id
     try:
-        tag = PrsTagEntry(conn=svc.ldap.get_read_conn(), id=tag_id)
+        tag = PrsTagEntry(id=tag_id)
     except:
         assert False, "Fail while load tag."
 
     assert tag.id == tag_id
 
 def test_f_35_cn_as_uuid():
-    new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=PrsTagCreate())
+    new_tag = PrsTagEntry(data=PrsTagCreate())
     assert new_tag.data.attributes.cn == new_tag.id
 
 def test_add_tag_with_multiple_cn():
     data=PrsTagCreate()
     data.attributes.cn = ["имя 1", "имя 2"]
     try:
-        new_tag = PrsTagEntry(conn=svc.ldap.get_write_conn(), data=data)
+        new_tag = PrsTagEntry(data=data)
     except:
         assert False, "Tag with multiple cn is not created"
     
