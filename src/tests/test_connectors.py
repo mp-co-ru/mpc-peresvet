@@ -1,8 +1,5 @@
-import json
 import uuid
-import pytest
 from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
-from app.svc.Services import Services as svc
 
 def test_connector_create():
     data = PrsConnectorCreate()
