@@ -65,7 +65,7 @@ class PrsApplication(FastAPI):
         svc.data_storages[payload.dataStorageId].reg_tags(new_tag)
 
         if payload.connectorId is not None:
-            connector = PrsConnectorEntry(payload.connectorId)
+            connector = PrsConnectorEntry(id=payload.connectorId)
             connector.reg_tags(new_tag)
 
         svc.logger.info("Тэг '{}'({}) создан.".format(new_tag.data.attributes.cn, new_tag.id))
@@ -156,7 +156,7 @@ class PrsApplication(FastAPI):
         return Response(status_code=204)
 
     def create_connector(self, payload: PrsConnectorCreate) -> PrsConnectorEntry:
-        new_connector = PrsConnectorEntry()
+        new_connector = PrsConnectorEntry(data=payload)
         svc.logger.info("Коннектор '{}'({}) создан.".format(new_connector.data.attributes.cn, new_connector.id))
 
         return new_connector
@@ -167,14 +167,14 @@ class PrsApplication(FastAPI):
     def response_to_connector(self, conn_id: str):
         conn = PrsConnectorEntry(id=conn_id)
         result = {
-            "attributes": conn.data.dict(),
+            "attributes": conn.data.attributes.dict(),
             "tags": []
         }
         tags = conn.read_tags()
         for tag in tags['tags']:
             tag_dict = {
                 "id": tag.id,
-                "attributes": tag.data.dict()
+                "attributes": tag.data.attributes.dict()
             }
             result['tags'].append(tag_dict)
         

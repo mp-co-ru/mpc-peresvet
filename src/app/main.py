@@ -1,5 +1,7 @@
 from fastapi import WebSocket, WebSocketDisconnect
 from fastapi.exceptions import HTTPException
+import json
+
 from app.svc.Services import Services as svc
 from app.PrsApplication import PrsApplication
 import app.api.tags as tags
@@ -30,7 +32,7 @@ async def websocket_endpoint(websocket: WebSocket, connector_id: str):
             await websocket.close()
             raise WebSocketDisconnect()            
 
-        await websocket.send_json(response)
+        await websocket.send_text(json.dumps(response))
         while True:
             pass
             '''

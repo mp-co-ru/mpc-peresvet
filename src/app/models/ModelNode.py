@@ -3,6 +3,7 @@ from ldap3 import ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATT
 from uuid import uuid4, UUID
 from pydantic import BaseModel, validator, Field
 from typing import List, Optional, Union, Dict
+import json
 
 import app.main as main
 from app.svc.Services import Services as svc
@@ -25,7 +26,7 @@ class PrsModelNodeCreateAttrs(BaseModel):
             'Подробней - в документации на каждую сущность.'
         )
     )
-    prsJsonConfigString: str = Field(None, title="Строка с json-конфигурацией.",
+    prsJsonConfigString: Union[Dict, str] = Field(None, title="Строка с json-конфигурацией.",
         description=(
             'Атрибут может содержать строку с json-конфигурацией для сущности. Подробней - в документации на каждую сущность.'
         ))
@@ -144,6 +145,8 @@ class PrsModelNodeEntry:
             entry = writer.new('cn={},{}'.format(cn, parent_dn))
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
+                    if isinstance(value, dict):
+                        value = json.dumps(value)
                     entry[key] = value
             entry.entry_commit_changes()
 
@@ -178,7 +181,8 @@ class PrsModelNodeEntry:
 
             attrs.pop("objectClass")
             for key, value in attrs.items():
-                self.data.attributes.__setattr__(key, value)
+                #self.data.attributes.__setattr__(key, value)
+                self.data.attributes[key] = value
             
             self.dn = response[0]['dn']
             self._load_subnodes()      
