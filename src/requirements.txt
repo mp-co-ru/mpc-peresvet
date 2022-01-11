@@ -8,6 +8,7 @@ pydantic
 validators
 aiohttp[speedups]
 python-dateutil
+websockets
 
 #dev
 pytest

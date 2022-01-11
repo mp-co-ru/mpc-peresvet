@@ -4,7 +4,7 @@ from typing import Dict, Any
 from ldap3 import LEVEL, DEREF_NEVER
 from app.svc.logger.PrsLogger import PrsLogger
 import app.svc.ldap.ldap_db as ld
-from app.svc.websockets import PrsWebsocketConnectionManager
+from app.svc.websockets.PrsWebsocketConnectionManager import PrsWebsocketConnectionManager
 
 class Services:
     default_base_node: str = 'cn=prs'
@@ -48,6 +48,10 @@ class Services:
 
     """
     tags: Dict[str, Dict[str, Any]] = {}
+
+    @classmethod
+    def set_ws_pool(cls):
+        cls.ws_pool = PrsWebsocketConnectionManager()
 
     @classmethod
     def set_logger(cls):
