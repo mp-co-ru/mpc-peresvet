@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from ldap3 import ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
 from uuid import uuid4, UUID
 from pydantic import BaseModel, validator, Field
@@ -163,8 +164,10 @@ class PrsModelNodeEntry:
             self._add_subnodes()
         else: 
             self.data = self.__class__.payload_class()
-            _, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
+            status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
                 search_filter='(entryUUID={})'.format(id), search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
+            if not status:
+                raise HTTPException(status_code=404, detail="Сущность с id = {} отсутствует.".format(id))
             attrs = dict(response[0]['attributes'])
             self.id = id
 
