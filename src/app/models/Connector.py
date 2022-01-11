@@ -1,7 +1,7 @@
 from pydantic import validator, Field, root_validator
 from typing import List, Union, Dict
 import json
-from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
+from ldap3 import LEVEL, DEREF_SEARCH, DEREF_ALWAYS, ALL_ATTRIBUTES
 from urllib.parse import urlparse
 
 from app.svc.Services import Services as svc
@@ -43,6 +43,10 @@ class PrsConnectorEntry(PrsModelNodeEntry):
         PrsModelNodeEntry(data=data)        
     
     def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
+        '''
+        Метод создаёт ссылку на тэг внутри узла коннектора.
+        '''
+
         if isinstance(tags, (str, PrsTagEntry)):
             tags = [tags]
 
@@ -52,4 +56,20 @@ class PrsConnectorEntry(PrsModelNodeEntry):
             else:
                 tag_entry = tag
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
-           
+
+    def read_tags(self):
+        '''
+        Метод читает все тэги коннектора
+        '''
+        tags = {"tags": []}
+        found, _, response, _ = svc.ldap.get_read_conn().search(
+            search_base=self.tags_node, 
+            search_filter='(objectClass=prsTag)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            attributes=['entryUUID'])
+        if found:
+            for item in response:
+                attrs = dict(item['attributes'])
+                tag = PrsTagEntry(id=attrs['entryUUID'])
+                tags['tags'].append(tag)
+
+        return tags

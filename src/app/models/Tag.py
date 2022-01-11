@@ -3,7 +3,6 @@ from ldap3 import DEREF_ALWAYS, LEVEL
 
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, PrsModelNodeEntry
-from app.models.Connector import PrsConnectorEntry
 
 class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
     """Attributes for request for /tags/ POST"""
@@ -92,6 +91,8 @@ class PrsTagEntry(PrsModelNodeEntry):
         if self.data.dataStorageId is not None:
             svc.ldap.add_alias(node_entry.dn, svc.data_storages[self.data.dataStorageId].dn, "dataStorage")        
         if self.data.connectorId is not None:
+            # исправление ошибки circular import
+            from app.models.Connector import PrsConnectorEntry
             conn = PrsConnectorEntry(id=self.data.connectorId)
             svc.ldap.add_alias(node_entry.dn, conn.dn, "connector")
 

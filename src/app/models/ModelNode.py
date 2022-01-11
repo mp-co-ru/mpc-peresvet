@@ -163,6 +163,11 @@ class PrsModelNodeEntry:
             
             self._add_subnodes()
         else: 
+            try:
+                UUID(id)
+            except:
+                raise HTTPException(status_code=422, detail="Некорректный формат id: {}.".format(id))
+
             self.data = self.__class__.payload_class()
             status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
                 search_filter='(entryUUID={})'.format(id), search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])

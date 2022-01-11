@@ -17,6 +17,7 @@ class PrsApplication(FastAPI):
         super(PrsApplication, self).__init__(**kwargs)
         svc.set_logger()
         svc.set_ldap()
+        svc.set_ws_pool()
 
         self._set_data_storages()
 
@@ -162,3 +163,19 @@ class PrsApplication(FastAPI):
 
     def read_connector(self, id: str) -> PrsConnectorEntry:
         return PrsConnectorEntry(id=id)
+
+    def response_to_connector(self, conn_id: str):
+        conn = PrsConnectorEntry(id=conn_id)
+        result = {
+            "attributes": conn.data.dict(),
+            "tags": []
+        }
+        tags = conn.read_tags()
+        for tag in tags['tags']:
+            tag_dict = {
+                "id": tag.id,
+                "attributes": tag.data.dict()
+            }
+            result['tags'].append(tag_dict)
+        
+        return result
