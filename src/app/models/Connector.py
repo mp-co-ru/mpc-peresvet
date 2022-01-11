@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeEntry, PrsModelNodeCreate
+from app.models.Tag import PrsTagEntry
 from app.const import *
 
 class PrsConnectorCreateAttrs(PrsModelNodeCreateAttrs):
@@ -41,3 +42,14 @@ class PrsConnectorEntry(PrsModelNodeEntry):
         data.attributes = PrsModelNodeCreateAttrs(cn='tags')
         PrsModelNodeEntry(data=data)        
     
+    def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
+        if isinstance(tags, (str, PrsTagEntry)):
+            tags = [tags]
+
+        for tag in tags:
+            if isinstance(tag, str):
+                tag_entry = PrsTagEntry(id=tag)
+            else:
+                tag_entry = tag
+            svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
+           
