@@ -35,7 +35,10 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
             config = values.get('prsJsonConfigString')
             if config is not None:
                 try:
-                    js = json.loads(config)
+                    if isinstance(config, dict):
+                        js = config
+                    else:
+                        js = json.loads(config)
                     put_url = js['putUrl']
                     get_url = js['getUrl']
                     if uri_validator(put_url) and uri_validator(get_url):
