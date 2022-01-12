@@ -1,7 +1,9 @@
+from fastapi import HTTPException
 from ldap3 import ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
 from uuid import uuid4, UUID
 from pydantic import BaseModel, validator, Field
 from typing import List, Optional, Union, Dict
+import json
 
 import app.main as main
 from app.svc.Services import Services as svc
@@ -24,7 +26,7 @@ class PrsModelNodeCreateAttrs(BaseModel):
             'Подробней - в документации на каждую сущность.'
         )
     )
-    prsJsonConfigString: str = Field(None, title="Строка с json-конфигурацией.",
+    prsJsonConfigString: Union[Dict, str] = Field(None, title="Строка с json-конфигурацией.",
         description=(
             'Атрибут может содержать строку с json-конфигурацией для сущности. Подробней - в документации на каждую сущность.'
         ))
@@ -119,7 +121,10 @@ class PrsModelNodeEntry:
         # сохраняем коннект на время создания/чтения узла, в конце конструктора - освобождаем
         # делаем так, чтобы не плодить активных коннектов
         # в случае, когда необходимо будет реагировать на 
-        conn = (svc.ldap.get_read_conn(), svc.ldap.get_write_conn())[id is None]
+        if id is None:
+            conn = svc.ldap.get_write_conn()
+        else:
+            conn = svc.ldap.get_read_conn()
 
         ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
         ldap_cls_def += ['entryUUID']
@@ -143,6 +148,8 @@ class PrsModelNodeEntry:
             entry = writer.new('cn={},{}'.format(cn, parent_dn))
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
+                    if isinstance(value, dict):
+                        value = json.dumps(value)
                     entry[key] = value
             entry.entry_commit_changes()
 
@@ -162,14 +169,24 @@ class PrsModelNodeEntry:
             
             self._add_subnodes()
         else: 
+            try:
+                UUID(id)
+            except:
+                raise HTTPException(status_code=422, detail="Некорректный формат id: {}.".format(id))
+
             self.data = self.__class__.payload_class()
-            _, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
+            status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
                 search_filter='(entryUUID={})'.format(id), search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
+            if not status:
+                raise HTTPException(status_code=404, detail="Сущность с id = {} отсутствует.".format(id))
             attrs = dict(response[0]['attributes'])
             self.id = id
 
             attrs.pop("objectClass")
+                        
             for key, value in attrs.items():
+                if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
+                    value = float(value)
                 self.data.attributes.__setattr__(key, value)
             
             self.dn = response[0]['dn']

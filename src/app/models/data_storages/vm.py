@@ -14,7 +14,10 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         super(PrsVictoriametricsEntry, self).__init__(**kwargs)
 
         self.tag_cache = {}
-        js_config = json.loads(self.data.attributes.prsJsonConfigString)
+        if isinstance(self.data.attributes.prsJsonConfigString, dict):
+            js_config = self.data.attributes.prsJsonConfigString
+        else:
+            js_config = json.loads(self.data.attributes.prsJsonConfigString)
         self.put_url = js_config['putUrl']
         self.get_url = js_config['getUrl']
 
