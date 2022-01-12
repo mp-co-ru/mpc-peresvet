@@ -121,7 +121,10 @@ class PrsModelNodeEntry:
         # сохраняем коннект на время создания/чтения узла, в конце конструктора - освобождаем
         # делаем так, чтобы не плодить активных коннектов
         # в случае, когда необходимо будет реагировать на 
-        conn = (svc.ldap.get_read_conn(), svc.ldap.get_write_conn())[id is None]
+        if id is None:
+            conn = svc.ldap.get_write_conn()
+        else:
+            conn = svc.ldap.get_read_conn()
 
         ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
         ldap_cls_def += ['entryUUID']
@@ -180,9 +183,11 @@ class PrsModelNodeEntry:
             self.id = id
 
             attrs.pop("objectClass")
+                        
             for key, value in attrs.items():
-                #self.data.attributes.__setattr__(key, value)
-                self.data.attributes[key] = value
+                if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
+                    value = float(value)
+                self.data.attributes.__setattr__(key, value)
             
             self.dn = response[0]['dn']
             self._load_subnodes()      
