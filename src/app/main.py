@@ -32,7 +32,7 @@ async def websocket_endpoint(websocket: WebSocket, connector_id: str):
             await websocket.close()
             raise WebSocketDisconnect()            
 
-        await websocket.send_text(json.dumps(response))
+        await websocket.send_json(response)
         while True:
             pass
             '''
