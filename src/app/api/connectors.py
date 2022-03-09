@@ -14,4 +14,3 @@ async def create(payload: PrsConnectorCreate):
 async def read_connector(id: str):
     return main.app.read_connector(id).data
     
-
