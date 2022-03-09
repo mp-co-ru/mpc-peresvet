@@ -41,15 +41,12 @@ async def websocket_endpoint(websocket: WebSocket, connector_id: str):
         
         while True:
             data = await websocket.receive_json()
+            app.data_set(data=data)
             await websocket.send_text("Вы послали: {}".format(data))
             
-    except WebSocketDisconnect:
+    except Exception as ex:
         svc.ws_pool.disconnect(websocket)
-        svc.logger.info("Разрыв связи с коннектором {}".format(connector_id))
-        '''
-        manager.disconnect(websocket)
-        await manager.broadcast(f"Client #{client_id} left the chat")
-        '''
+        svc.logger.info("Разрыв связи с коннектором {}: {}".format(connector_id, ex))        
 
 
 @app.on_event("startup")

@@ -1,3 +1,5 @@
 {
-    "restructuredtext.confPath": "${workspaceFolder}/documentation/source"
+    "restructuredtext.confPath": "${workspaceFolder}/documentation/source",
+    "esbonio.server.enabled": true,
+    "esbonio.sphinx.confDir": "/home/vovaman/work/projects/peresvet/documentation/source"
 }
