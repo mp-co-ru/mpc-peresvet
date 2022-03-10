@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException, Response
+from typing import Dict, Any, List
 
+from fastapi import FastAPI, HTTPException, Response
 from ldap3 import BASE, DEREF_ALWAYS, DEREF_NEVER, SUBTREE, LEVEL
-from typing import Dict, Any
 
 from app.svc.Services import Services as svc
 from app.models.Tag import PrsTagEntry, PrsTagCreate
@@ -10,9 +10,15 @@ from app.models.data_storages.vm import PrsVictoriametricsEntry
 from app.models.Data import PrsData
 from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
 import app.times as times
-from app.const import *
+from app.const import CN_DS_POSTGRESQL, CN_DS_VICTORIAMETRICS
 
 class PrsApplication(FastAPI):
+
+    # list of attributes returned to connector
+    connector_attrs: List[str] = [
+        "prsSource", "prsValueTypeCode", "prsMaxDev", "prsValueScale"
+    ]
+
     def __init__(self, **kwargs):
         super(PrsApplication, self).__init__(**kwargs)
         svc.set_logger()
@@ -23,34 +29,34 @@ class PrsApplication(FastAPI):
 
     def _reg_data_storage_in_cache(self, ds: PrsDataStorageEntry):
         """
-        Метод, заносящий в кэш хранилище данных. 
+        Метод, заносящий в кэш хранилище данных.
         Вызывается при создании нового хранилища и при старте приложения.
         """
         svc.data_storages[ds.id] = ds
         if ds.data.attributes.prsDefault:
             svc.default_data_storage_id = ds.id
-    
+
     def _set_data_storages(self):
         svc.logger.info("Start load datastorages...")
-        
+
         found, _, response, _ = svc.ldap.get_read_conn().search(
-            search_base=svc.config["LDAP_DATASTORAGES_NODE"], 
-            search_filter='(cn=*)', search_scope=LEVEL, dereference_aliases=DEREF_NEVER, 
+            search_base=svc.config["LDAP_DATASTORAGES_NODE"],
+            search_filter='(cn=*)', search_scope=LEVEL, dereference_aliases=DEREF_NEVER,
             attributes=['entryUUID', 'prsEntityTypeCode', 'prsDefault'])
         if found:
             for item in response:
                 attrs = dict(item['attributes'])
-                
+
                 if attrs['prsEntityTypeCode'] != CN_DS_VICTORIAMETRICS:
                     continue
-                
+
                 new_ds = PrsVictoriametricsEntry(id=attrs['entryUUID'])
                 self._reg_data_storage_in_cache(new_ds)
-                
+
         if svc.data_storages:
             if svc.default_data_storage_id is None:
                 svc.default_data_storage_id = svc.data_storages.keys()[0]
-        
+
         svc.logger.info("Хранилища данных загружены.")
 
     def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
@@ -83,7 +89,7 @@ class PrsApplication(FastAPI):
 
         if payload.attributes.prsEntityTypeCode != CN_DS_VICTORIAMETRICS:
             raise HTTPException(status_code=422, detail="Поддерживается только создание хранилища Victoriametrics (prsEntityTypeCode = 1)")
-        
+
         new_ds = PrsVictoriametricsEntry(data=payload)
         self._reg_data_storage_in_cache(new_ds)
 
@@ -96,7 +102,7 @@ class PrsApplication(FastAPI):
 
     def read_tag(self, id: str) -> PrsTagEntry:
         return PrsTagEntry(id=id)
-    
+
     def get_node_id_by_dn(self, dn: str) -> str:
         found, _, response, _ = svc.ldap.get_read_conn().search(
             search_base=dn, search_filter='(cn=*)', search_scope=BASE, dereference_aliases=DEREF_NEVER, attributes='entryUUID')
@@ -118,7 +124,7 @@ class PrsApplication(FastAPI):
 
     async def data_set(self, data: PrsData) -> Response:
         """
-        Метод разбивает массив данных на несколько массивов: один массив - одно хранилище и раздаёт эти массивы на запись 
+        Метод разбивает массив данных на несколько массивов: один массив - одно хранилище и раздаёт эти массивы на запись
         соответствующим хранилищам. Также создаёт метки времени, если их нет и конвертирует их в микросекунды.
         """
         now_ts = times.now_int()
@@ -127,7 +133,7 @@ class PrsApplication(FastAPI):
         # {
         #   "<data_storge_id>": {
         #        "<tag_id>": [(x, y, q)]
-        #   }            
+        #   }
         # }
         data_storages = {}
         for tag_item in data.data:
@@ -137,13 +143,13 @@ class PrsApplication(FastAPI):
             data_storages[data_storage_id].setdefault(tag_item.tagId, [])
 
             for data_item in tag_item.data:
-                if data_item.x is None: 
+                if data_item.x is None:
                     x = now_ts
                 else:
                     x = times.timestamp_to_int(data_item.x)
                 data_storages[data_storage_id][tag_item.tagId].append((x, data_item.y, data_item.q))
 
-        # TODO: сделать параллельный запуск записи для хранилищ, а не друг за другом (background_tasks?)
+        #TODO: сделать параллельный запуск записи для хранилищ, а не друг за другом (background_tasks?)
         resp = {}
         for key, value in data_storages.items():
             resp[key] = await svc.data_storages[key].set_data(value)
@@ -157,7 +163,7 @@ class PrsApplication(FastAPI):
 
     def create_connector(self, payload: PrsConnectorCreate) -> PrsConnectorEntry:
         new_connector = PrsConnectorEntry(data=payload)
-        svc.logger.info("Коннектор '{}'({}) создан.".format(new_connector.data.attributes.cn, new_connector.id))
+        svc.logger.info(f"Коннектор '{new_connector.data.attributes.cn}'({new_connector.id}) создан.")
 
         return new_connector
 
@@ -174,8 +180,11 @@ class PrsApplication(FastAPI):
         for tag in tags['tags']:
             tag_dict = {
                 "id": tag.id,
-                "attributes": tag.data.attributes.dict()
+                "attributes": {}
             }
+            attrs = tag.data.attributes.dict()
+            for attr in PrsApplication.connector_attrs:
+                tag_dict["attributes"][attr] = attrs[attr]
             result['tags'].append(tag_dict)
-        
+
         return result
