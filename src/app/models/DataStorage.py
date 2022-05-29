@@ -1,13 +1,14 @@
-from pydantic import validator, Field, root_validator
 from typing import List, Union, Dict
 import json
-from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
+
 from urllib.parse import urlparse
+from pydantic import validator, Field, root_validator
+from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
 
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeEntry, PrsModelNodeCreate
 from app.models.Tag import PrsTagEntry
-from app.const import *
+from app.const import CN_DS_VICTORIAMETRICS, CN_DS_POSTGRESQL
 
 class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """
@@ -18,16 +19,17 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         description=(
             '- 1 - Victoriametrics'
         )
-    ) 
+    )
 
     @root_validator
+    @classmethod
     def check_vm_config(cls, values):
-        
+
         def uri_validator(x):
             try:
                 result = urlparse(x)
                 return all([result.scheme, result.netloc])
-            except:
+            except Exception as _:
                 return False
 
         type_code = values.get('prsEntityTypeCode')
@@ -43,7 +45,7 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
                     get_url = js['getUrl']
                     if uri_validator(put_url) and uri_validator(get_url):
                        return values
-                except:
+                except Exception as _:
                     pass
 
             raise ValueError((
@@ -52,12 +54,13 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
             ))
         else:
             return values
-    
+
 class PrsDataStorageCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
     attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=CN_DS_POSTGRESQL)
 
     @validator('parentId', check_fields=False, always=True)
+    @classmethod
     def parentId_must_be_none(cls, v):
         if v is not None:
             raise ValueError('parentId must be null for dataStorage')
@@ -71,16 +74,16 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
     def __init__(self, **kwargs):
         super(PrsDataStorageEntry, self).__init__(**kwargs)
-        
-        self.tags_node = "cn=tags,{}".format(self.dn)
-        self._read_tags()        
-    
+
+        self.tags_node = f"cn=tags,{self.dn}"
+        self._read_tags()
+
     def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
         res = tag.data.attributes.prsStore
         if res is not None:
             try:
                 res = json.loads(tag.data.attributes.prsStore)
-            except:
+            except Exception as _:
                 pass
 
         return res
@@ -89,18 +92,18 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
         result, _, response, _ = svc.ldap.get_read_conn().search(
             search_base=self.tags_node,
-            search_filter='(cn=*)', search_scope=LEVEL, 
-            dereference_aliases=DEREF_SEARCH, 
+            search_filter='(cn=*)', search_scope=LEVEL,
+            dereference_aliases=DEREF_SEARCH,
             attributes=[ALL_ATTRIBUTES, 'entryUUID'])
         if not result:
-            svc.logger.info("Нет привязанных тэгов к хранилищу '{}'".format(self.data.attributes.cn))
+            svc.logger.info(f"Нет привязанных тэгов к хранилищу '{self.data.attributes.cn}'")
             return
-        
+
         for item in response:
             tag_entry = PrsTagEntry(id=str(item['attributes']['entryUUID']))
             svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry))
-        
-        svc.logger.info("Тэги, привязанные к хранилищу `{}`, прочитаны.".format(self.data.attributes.cn))        
+
+        svc.logger.info(f"Тэги, привязанные к хранилищу `{self.data.attributes.cn}`, прочитаны.")
 
     async def connect(self): pass
 
@@ -116,7 +119,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
         data.attributes.cn = 'alerts'
         PrsModelNodeEntry(data=data)
-    
+
     def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
         if isinstance(tags, (str, PrsTagEntry)):
             tags = [tags]
