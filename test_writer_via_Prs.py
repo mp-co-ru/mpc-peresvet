@@ -1,5 +1,5 @@
 # простой тестовый скрипт для записи данных в Peresvet
-# принимает в качестве аргументов: 
+# принимает в качестве аргументов:
 # 1. h=<server_name_or_ip_with_port> - адрес сервера (по умолчанию - localhost:8002)
 # 2. t=<tag_id> - id тэга
 # 3. f=<frequency> - частота записи данных в секундах (по умолчанию - 2)
@@ -9,13 +9,12 @@
 import sys
 
 import logging
-import requests
-
 from random import randint
 from time import sleep
+import requests
 
-def main(args):    
-    url = 'http://{}/data'.format(args["h"])
+def main(args):
+    url = f'http://{args["h"]}/data'
     payload = {"data": [
         {
             "tagId": args["t"],
@@ -26,15 +25,15 @@ def main(args):
             ]
         }
     ]}
-    
+
     try:
         while True:
             val = randint(-10, 10)
             payload["data"][0]["data"][0]["y"] = val
             r = requests.post(url, json=payload)
-            print("Value: {}; Status: {}".format(val, r.status_code))
+            print(f"Value: {val}; Status: {r.status_code}")
             sleep(args["f"])
-            
+
     except KeyboardInterrupt:
         print("Interrupted.")
 

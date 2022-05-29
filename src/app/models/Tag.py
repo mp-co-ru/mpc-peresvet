@@ -6,7 +6,7 @@ from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeCreate, Pr
 
 class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
     """Attributes for request for /tags/ POST"""
-    
+
     """top"""
     prsValueTypeCode: int = Field(1, title='Тип значения тэга',
         description=(
@@ -20,7 +20,7 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
         description=(
             'В случае, если тэг получает данные из внешнего источника данных, в этом атрибуте содержится `id` этого источника данных. '
             'При подключении к **Пересвету** источник данных получает список всех тэгов, в которые он должен записывать данные.'
-        )    
+        )
     )
     prsStore: str = Field(None, title='`id` хранилища данных',
         description=(
@@ -41,7 +41,7 @@ class PrsTagCreateAttrs(PrsModelNodeCreateAttrs):
         description=(
             'Параметр, влияющий на фильтрацию значений тэгов, только уже не на уровне источника данных, как в случае с `prsMaxDev`, '
             'а на уровне ядра.'
-        )    
+        )
     )
     prsArchive: bool = Field(True, title='Флаг хранения истории значений тэга',
         description=(
@@ -80,7 +80,7 @@ class PrsTagEntry(PrsModelNodeEntry):
     payload_class = PrsTagCreate
     objectClass: str = 'prsTag'
     default_parent_dn: str = svc.config["LDAP_TAGS_NODE"]
-    
+
     def _add_subnodes(self) -> None:
         super()._add_subnodes()
 
@@ -89,7 +89,7 @@ class PrsTagEntry(PrsModelNodeEntry):
         system_node.parentId = self.id
         node_entry = PrsModelNodeEntry(data=system_node)
         if self.data.dataStorageId is not None:
-            svc.ldap.add_alias(node_entry.dn, svc.data_storages[self.data.dataStorageId].dn, "dataStorage")        
+            svc.ldap.add_alias(node_entry.dn, svc.data_storages[self.data.dataStorageId].dn, "dataStorage")
         if self.data.connectorId is not None:
             # исправление ошибки circular import
             from app.models.Connector import PrsConnectorEntry
@@ -98,16 +98,15 @@ class PrsTagEntry(PrsModelNodeEntry):
 
     def _load_subnodes(self):
         found, _, response, _ = svc.ldap.get_read_conn().search(
-            search_base="cn=system,{}".format(self.dn), 
-            search_filter='(objectClass=prsDataStorage)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            search_base=f"cn=system,{self.dn}",
+            search_filter='(objectClass=prsDataStorage)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS,
             attributes=['entryUUID'])
         if found:
             self.data.dataStorageId = str(response[0]['attributes']['entryUUID'])
 
         found, _, response, _ = svc.ldap.get_read_conn().search(
-            search_base="cn=system,{}".format(self.dn), 
-            search_filter='(objectClass=prsConnector)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            search_base=f"cn=system,{self.dn}",
+            search_filter='(objectClass=prsConnector)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS,
             attributes=['entryUUID'])
         if found:
             self.data.connectorId = str(response[0]['attributes']['entryUUID'])
-            
