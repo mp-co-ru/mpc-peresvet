@@ -1,5 +1,5 @@
+import json
 import pytest
-import json 
 
 from fastapi import Response
 
@@ -7,9 +7,7 @@ from app.models.DataStorage import PrsDataStorageCreate
 from app.models.Data import PrsData
 from app.svc.Services import Services as svc
 from app.models.data_storages.vm import PrsVictoriametricsEntry
-
 from app.models.Tag import PrsTagCreate
-
 
 @pytest.mark.asyncio
 async def test_data_set(test_app, monkeypatch):
@@ -36,8 +34,4 @@ async def test_data_set(test_app, monkeypatch):
 
     p_data = PrsData(data=data)
 
-    res = await test_app.app.data_set(data=p_data)
-
-    
-
-
+    await test_app.app.data_set(data=p_data)

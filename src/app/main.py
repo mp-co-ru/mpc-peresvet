@@ -1,7 +1,8 @@
-from fastapi import WebSocket, WebSocketDisconnect
-from fastapi.exceptions import HTTPException
 import json
 import asyncio
+
+from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.exceptions import HTTPException
 
 from app.svc.Services import Services as svc
 from app.PrsApplication import PrsApplication
@@ -25,28 +26,28 @@ async def websocket_endpoint(websocket: WebSocket, connector_id: str):
     try:
         await svc.ws_pool.connect(websocket)
 
-        svc.logger.info("Установлена связь с коннектором {}".format(connector_id))
+        svc.logger.info(f"Установлена связь с коннектором {connector_id}")
 
         response = {}
         try:
             response = app.response_to_connector(connector_id)
         except HTTPException as ex:
-            er_str = "Ошибка при установлении связи с коннектором {}: {}".format(connector_id, ex.detail)
+            er_str = f"Ошибка при установлении связи с коннектором {connector_id}: {ex}"
             svc.logger.info(er_str)
             await websocket.send_text(er_str)
             await websocket.close()
-            raise WebSocketDisconnect()            
+            raise WebSocketDisconnect() from ex
 
         await websocket.send_json(response)
-        
+
         while True:
-            data = await websocket.receive_json()
-            app.data_set(data=data)
-            await websocket.send_text("Вы послали: {}".format(data))
-            
+            received_data = await websocket.receive_json()
+            app.data_set(data=received_data)
+            await websocket.send_text(f"Вы послали: {received_data}")
+
     except Exception as ex:
         svc.ws_pool.disconnect(websocket)
-        svc.logger.info("Разрыв связи с коннектором {}: {}".format(connector_id, ex))        
+        svc.logger.info(f"Разрыв связи с коннектором {connector_id}: {ex}")
 
 
 @app.on_event("startup")
@@ -56,4 +57,3 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     pass
-

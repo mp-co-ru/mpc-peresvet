@@ -15,11 +15,12 @@ class PrsConnectorCreateAttrs(PrsModelNodeCreateAttrs):
     Используются при создании/изменении/получении коннекторов.
     """
     pass
-    
+
 class PrsConnectorCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
     attributes: PrsConnectorCreateAttrs = PrsConnectorCreateAttrs()
 
+    @classmethod
     @validator('parentId', check_fields=False, always=True)
     def parentId_must_be_none(cls, v):
         if v is not None:
@@ -33,15 +34,15 @@ class PrsConnectorEntry(PrsModelNodeEntry):
 
     def __init__(self, **kwargs):
         super(PrsConnectorEntry, self).__init__(**kwargs)
-        
-        self.tags_node = "cn=tags,{}".format(self.dn)        
-   
+
+        self.tags_node = f"cn=tags,{self.dn}"
+
     def _add_subnodes(self) -> None:
         data = PrsModelNodeCreate()
         data.parentId = self.id
         data.attributes = PrsModelNodeCreateAttrs(cn='tags')
-        PrsModelNodeEntry(data=data)        
-    
+        PrsModelNodeEntry(data=data)
+
     def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
         '''
         Метод создаёт ссылку на тэг внутри узла коннектора.
@@ -63,8 +64,8 @@ class PrsConnectorEntry(PrsModelNodeEntry):
         '''
         tags = {"tags": []}
         found, _, response, _ = svc.ldap.get_read_conn().search(
-            search_base=self.tags_node, 
-            search_filter='(objectClass=prsTag)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS, 
+            search_base=self.tags_node,
+            search_filter='(objectClass=prsTag)', search_scope=LEVEL, dereference_aliases=DEREF_ALWAYS,
             attributes=['entryUUID'])
         if found:
             for item in response:
