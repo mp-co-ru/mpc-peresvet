@@ -18,4 +18,3 @@ def test_wrong_connector_id():
     id = str(uuid.uuid4())
     with pytest.raises(HTTPException):
         conn = PrsConnectorEntry(id=id)
-    

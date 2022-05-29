@@ -74,7 +74,7 @@ class PrsApplication(FastAPI):
             connector = PrsConnectorEntry(id=payload.connectorId)
             connector.reg_tags(new_tag)
 
-        svc.logger.info("Тэг '{}'({}) создан.".format(new_tag.data.attributes.cn, new_tag.id))
+        svc.logger.info(f"Тэг '{new_tag.data.attributes.cn}'({new_tag.id}) создан.")
 
         return new_tag
 
@@ -93,7 +93,7 @@ class PrsApplication(FastAPI):
         new_ds = PrsVictoriametricsEntry(data=payload)
         self._reg_data_storage_in_cache(new_ds)
 
-        svc.logger.info("Хранилище данных '{}'({}) создано.".format(new_ds.data.attributes.cn, new_ds.id))
+        svc.logger.info(f"Хранилище данных '{new_ds.data.attributes.cn}'({new_ds.id}) создано.")
 
         return new_ds
 
@@ -114,7 +114,7 @@ class PrsApplication(FastAPI):
     def get_node_dn_by_id(self, id: str) -> str:
         found, _, response, _ = svc.ldap.get_read_conn().search(
             search_base=svc.config["LDAP_BASE_NODE"],
-            search_filter="({}={})".format('entryUUID', id),
+            search_filter=f"(entryUUID={id})",
             search_scope=SUBTREE,
             dereference_aliases=False,
             attributes='cn'

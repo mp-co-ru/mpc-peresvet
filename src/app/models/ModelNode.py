@@ -1,6 +1,7 @@
+from uuid import uuid4, UUID
+
 from fastapi import HTTPException
 from ldap3 import ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
-from uuid import uuid4, UUID
 from pydantic import BaseModel, validator, Field
 from typing import List, Optional, Union, Dict
 import json
@@ -55,34 +56,19 @@ class PrsModelNodeCreateAttrs(BaseModel):
             'В этом случае, при запросе на получение сущностей, приложение указывает свое имя и получает список предназначенных ему сущностей.'
         )
     )
-
+    @classmethod
     @validator('cn', 'description', 'prsApp')
     def empty_list_is_none(cls, v):
         if isinstance(v, list) and len(v)==0:
             return None
         return v
 
-    '''
-    class Item(BaseModel):
-        name: str
-        description: Optional[str] = Field(
-            None, title="The description of the item", max_length=300
-        )
-        price: float = Field(..., gt=0, description="The price must be greater than zero")
-        tax: Optional[float] = None
-
-
-    @app.put("/items/{item_id}")
-    async def update_item(item_id: int, item: Item = Body(..., embed=True)):
-        results = {"item_id": item_id, "item": item}
-        return results
-    '''
-
 class PrsModelNodeCreate(BaseModel):
     """Class for http requests validation"""
     parentId: str = None # uuid of parent node
     attributes: PrsModelNodeCreateAttrs = PrsModelNodeCreateAttrs()
 
+    @classmethod
     @validator('parentId', check_fields=False)
     def parentId_must_be_uuid_or_none(cls, v):
         if v is not None:
@@ -172,7 +158,7 @@ class PrsModelNodeEntry:
             try:
                 UUID(id)
             except:
-                raise HTTPException(status_code=422, detail="Некорректный формат id: {}.".format(id))
+                raise HTTPException(status_code=422, detail=f"Некорректный формат id: {id}.")
 
             self.data = self.__class__.payload_class()
             status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
