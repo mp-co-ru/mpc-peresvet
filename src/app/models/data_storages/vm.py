@@ -5,7 +5,7 @@ from typing import Dict, Union
 from fastapi import Response
 
 from app.models.DataStorage import PrsDataStorageEntry
-from app.models.Tag import PrsTagEntry 
+from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
 
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
@@ -40,13 +40,13 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
     async def connect(self) -> int:
         async with self.session.get("{}{}".format(self.get_url, "?match[]=vm_free_disk_space_bytes")) as response:
             return response.status
-            
+
     async def set_data(self, data):
         # data:
         # {
         #        "<tag_id>": [(x, y, q)]
-        # }  
-        # 
+        # }
+        #
         # method forms archive:
         # [
         #     {
@@ -67,12 +67,12 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         #            "dc": "lga"
         #         }
         #     }
-        # ] 
-        
+        # ]
+
         formatted_data = []
         for key, item in data.items():
             # формат prsStore у тэга:
-            # 
+            #
             #   {
             #        "metric": "metric_name",
             #        "tags": {
@@ -88,7 +88,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
                 formatted_data.append(copy.deepcopy(tag_metric))
 
         resp = await self.session.post(self.put_url, json=formatted_data)
-        
-        svc.logger.debug("Set data status: {}".format(resp.status))
+
+        svc.logger.debug(f"Set data status: {resp.status}")
 
         return Response(status_code=resp.status)
