@@ -30,7 +30,6 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile.ldap
-    restart: always
     ports:
       - 389:389
       - 636:636
@@ -40,7 +39,6 @@ services:
   victoriametrics:
     image: victoriametrics/victoria-metrics
     container_name: vm
-    restart: always
     command: -opentsdbHTTPListenAddr=:4242
     ports:
       - 8428:8428
@@ -55,7 +53,6 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile.grafana
-    restart: always
     ports:
       - 3000:3000
     environment:
