@@ -21,7 +21,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         self.put_url = js_config['putUrl']
         self.get_url = js_config['getUrl']
 
-        self.session = aiohttp.ClientSession()
+        self.session = None
 
     def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
         if tag.data.attributes.prsStore:
@@ -38,6 +38,8 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         return data_store
 
     async def connect(self) -> int:
+        if self.session is None:
+            self.session = aiohttp.ClientSession()
         async with self.session.get("{}{}".format(self.get_url, "?match[]=vm_free_disk_space_bytes")) as response:
             return response.status
 

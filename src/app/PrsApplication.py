@@ -131,7 +131,7 @@ class PrsApplication(FastAPI):
         # словарь значений для записи в разных хранилищах
         # имеет вид:
         # {
-        #   "<data_storge_id>": {
+        #   "<data_storage_id>": {
         #        "<tag_id>": [(x, y, q)]
         #   }
         # }
