@@ -13,7 +13,7 @@ def test_app():
     yield client  # testing happens here
 
 @pytest.fixture(scope='function')
-async def create_vm_default_datastorage(test_app):
+def create_vm_default_datastorage(test_app):
     data = PrsDataStorageCreate()
     data.attributes.prsDefault = True
     data.attributes.prsEntityTypeCode = 1

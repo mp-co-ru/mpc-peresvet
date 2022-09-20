@@ -3,12 +3,12 @@ version: '3.9'
 services:
   peresvet:
     container_name: peresvet
-    build: 
+    build:
       context: .
       dockerfile: Docker/Dockerfile.peresvet
 
-    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000 --ws-ping-interval 10 --ws-ping-timeout 10 
-      
+    command: uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000 --ws-ping-interval 10 --ws-ping-timeout 10
+
     volumes:
       - ./src/:/usr/src/
     ports:
@@ -18,7 +18,7 @@ services:
       - victoriametrics
     environment:
       PRS_LOG_LEVEL: ${PRS_LOG_LEVEL}
-      TZ: ${TIME_ZONE} 
+      TZ: ${TIME_ZONE}
       LDAP_HOST: ${LDAP_HOST}
       LDAP_PORT: ${LDAP_PORT}
       LDAP_USER: ${LDAP_USER}
@@ -30,18 +30,16 @@ services:
     build:
       context: .
       dockerfile: Docker/Dockerfile.ldap
-    restart: always
     ports:
       - 389:389
       - 636:636
     environment:
       TZ: ${TIME_ZONE}
-  
+
   victoriametrics:
     image: victoriametrics/victoria-metrics
     container_name: vm
-    restart: always
-    command: -opentsdbHTTPListenAddr=:4242    
+    command: -opentsdbHTTPListenAddr=:4242
     ports:
       - 8428:8428
       - 4242:4242
@@ -52,8 +50,9 @@ services:
 
   grafana:
     container_name: grafana
-    image: grafana/grafana
-    restart: always
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.grafana
     ports:
       - 3000:3000
     environment:
