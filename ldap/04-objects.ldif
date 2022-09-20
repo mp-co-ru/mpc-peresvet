@@ -67,6 +67,20 @@ changetype: add
 objectClass: prsDataStorage
 prsDefault: TRUE
 prsEntityTypeCode: 1
-prsJsonConfigString: {"putUrl": "http://vm:4242/api/put", "getUrl": "http://vm:8428/api/v1/export"} 
+prsJsonConfigString: {"putUrl": "http://vm:4242/api/put", "getUrl": "http://vm:8428/api/v1/export"}
 description: Default data storage
 cn: vm
+
+# add tags node
+dn: cn=tags,cn=vm,cn=dataStorages,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: All datastorage's tags
+cn: tags
+
+# add alerts node
+dn: cn=alerts,cn=vm,cn=dataStorages,cn=prs
+changetype: add
+objectClass: prsModelNode
+description: All datastorage's alerts
+cn: alerts
