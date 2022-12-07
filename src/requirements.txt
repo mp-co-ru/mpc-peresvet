@@ -16,3 +16,4 @@ requests
 mock
 pytest-cov
 pytest-asyncio
+locust

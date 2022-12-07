@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from fastapi import Request
-import json
 import app.main as main
 import app.models.Data as Data
 
