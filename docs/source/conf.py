@@ -19,9 +19,9 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'Peresvet'
-copyright = '2021, Vladimir Badashkin'
-author = 'Vladimir Badashkin'
+project = 'MPC-Peresvet'
+copyright = '2022, Match Point Consulting Ltd.'
+author = 'Match Point Consulting Ltd.'
 
 # The short X.Y version
 version = '0.1'
@@ -109,7 +109,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Peresvetdoc'
+htmlhelp_basename = 'MPCPeresvetdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -136,8 +136,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Peresvet.tex', 'Peresvet Documentation',
-     'Vladimir Badashkin', 'manual'),
+    (master_doc, 'MPC-Peresvet.tex', 'MPC-Peresvet Documentation',
+     'Match Point Consulting Ltd.', 'manual'),
 ]
 
 
@@ -146,7 +146,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'peresvet', 'Peresvet Documentation',
+    (master_doc, 'MPC-Peresvet', 'MPC-Peresvet Documentation',
      [author], 1)
 ]
 
@@ -157,8 +157,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Peresvet', 'Peresvet Documentation',
-     author, 'Peresvet', 'One line description of project.',
+    (master_doc, 'MPC-Peresvet', 'MPC-Peresvet Documentation',
+     author, 'MPC-Peresvet', 'MPC-Peresvet. Industrial autommmation',
      'Miscellaneous'),
 ]
 
