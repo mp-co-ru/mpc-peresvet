@@ -9,8 +9,8 @@ services:
         - ${HTTPS_PORT}:${HTTPS_PORT}
       #restart: always
       volumes:
-        - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-        - ./config/nginx/no_ssl/:/etc/nginx/conf.d/:ro
+        - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+        - ./config/nginx/no_ssl/:/etc/nginx/conf.d/
       environment:
         HTTP_PORT: ${HTTP_PORT}
         HTTPS_PORT: ${HTTPS_PORT}

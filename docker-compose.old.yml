@@ -58,16 +58,3 @@ services:
     environment:
       TZ: ${TIME_ZONE}
 
-  nginx:
-    image: nginx:latest
-    container_name: nginx
-    ports:
-      - 8000:8000
-      - 443:443
-    #restart: always
-    volumes:
-      - ./nginx/:/etc/nginx/conf.d/:ro
-      - ./tls/MPCServer/:/etc/nginx/ssl/server/:ro
-      - ./tls/rootCA/:/etc/nginx/ssl/root/:ro
-    depends_on:
-      - main_app
