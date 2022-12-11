@@ -27,7 +27,7 @@ class DataSetUser(HttpUser):
         }
 
         #data = {"data": [{"tagId": "635ecc7c-af4f-103c-9bc4-f315a0a65dfc", "data": [{"y": 29.998314224725192}]}]}
-        self.client.post("/data", json=data)
+        self.client.post("/data/", json=data)
 
     '''
     @task(3)
