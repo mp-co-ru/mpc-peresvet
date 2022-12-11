@@ -134,3 +134,5 @@ vm-data/
 src/*.json
 
 tls/
+
+test_*.py

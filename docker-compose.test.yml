@@ -7,17 +7,15 @@ services:
       - victoriametrics
     environment:
       PRS_LOG_LEVEL: DEBUG
-      LDAP_HOST: ldap_test      
-      
+      LDAP_HOST: ldap_test
+
   ldap_test:
     container_name: ldap_test
     build:
       context: .
       dockerfile: Docker/Dockerfile.ldap
-    restart: always
     ports:
       - 3890:389
       - 6360:636
     environment:
       TZ: ${TIME_ZONE}
-  
