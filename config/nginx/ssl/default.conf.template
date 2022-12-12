@@ -17,7 +17,7 @@ server {
     ssl_certificate /etc/nginx/ssl/server/${SRV_NAME}.crt;
     ssl_certificate_key /etc/nginx/ssl/server/${SRV_NAME}.key;
     ssl_client_certificate /etc/nginx/ssl/rootCA/rootCA.crt;
-    ssl_verify_client on;
+    ssl_verify_client ${NGINX_CERT_REQUIRED};
     proxy_ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
     proxy_ssl_ciphers HIGH:!aNULL:!MD5;
     set $proto https;

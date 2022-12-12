@@ -7,7 +7,7 @@
 #
 # d - valid period in days for root certificate; default = 3654 (10 years)
 # k - key length in bits; default = 4096
-# s - subj info; default = /CN=client<some_GUID>
+# s - subj info; default = /CN=client-<some_GUID>
 #
 # Script generates certificate, key and bundle (certificate + key)
 # for client and places them to tls/clients/<subj> folder.
