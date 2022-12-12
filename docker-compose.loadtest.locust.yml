@@ -58,9 +58,9 @@ services:
   ldap:
     container_name: ldap_load_test
     image: mpc/ws_ldap_for_load_test:0.2
-    ports:
-      - 389:389
-      - 636:636
+    #ports:
+    #  - 389:389
+    #  - 636:636
     environment:
       TZ: ${TIME_ZONE}
 
@@ -68,8 +68,8 @@ services:
     image: victoriametrics/victoria-metrics
     container_name: vm_load_test
     command: -opentsdbHTTPListenAddr=:4242
-    ports:
-      - 8428:8428
-      - 4242:4242
+    #ports:
+    #  - 8428:8428
+    #  - 4242:4242
     environment:
       TZ: ${TIME_ZONE}
