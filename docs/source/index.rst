@@ -3,9 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-МПК-Пересвет. Документация
-==========================
-**МПК-Пересвет** - платформа для автоматизации технических объектов. Сбор данных, хранение, обработка,
+МПК-Пересвет
+============
+**МПК-Пересвет** - платформа для автоматизации технических объектов.
+Сбор данных, хранение, обработка,
 выполнение определённых действий на базе происходящих событий.
 
 Отличия от баз данных реального времени (Prometheus, VictoriaMetrics и т.д.):
@@ -24,11 +25,11 @@
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Содержание:
 
    Описание<concept>
    Установка<installation>
-   Администрирование<administration>
+   Администрирование и конфигурация<administration_configuration>
    Тестовый пример<test_writer>
    API<api>
 

@@ -16,3 +16,4 @@ services:
         HTTP_PORT: ${HTTP_PORT}
         HTTPS_PORT: ${HTTPS_PORT}
         TZ: ${TIME_ZONE}
+        NGINX_CERT_REQUIRED: ${NGINX_CERT_REQUIRED}

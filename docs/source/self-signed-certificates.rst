@@ -1,216 +1,181 @@
 Создание самоподписанных сертификатов
 =====================================
-В данном разделе рассмотрим процесс создания самоподписанных сертификатов.
+Для работы платформы в защищённом режиме необходимо подготовить сертификаты.
 
-Описание
-++++++++
+Быстрый запуск
+++++++++++++++
+Допустим, все компоненты платформы запускаются на одном компьютере.
+На этом же компьютере уже есть папка с проектом ``mpc-peresvet``.
+
+Тогда запустить платформу в безопасном режиме очень просто:
+
+#. Заходим в папку проекта ``certificates`` и запускаем скрипт ``gen_crt.sh``:
+
+   ::
+
+      mpc-peresvet$ cd certificates
+      mpc-peresvet/certificates$ ./gen_crt.sh
+
+#. В корневой папке проекта открываем файл ``.env`` и правим в нём переменную
+   ``SRV_NAME`` - впишите имя вашего компьютера
+   (оно содержится в файле ``/etc/hostname``):
+
+   ::
+
+      SRV_NAME=<имя_вашего_компьютера>
+
+#. В корневой папке проекта запускаем скрипт ``run_ssl.sh``:
+
+   ::
+
+      mpc-peresvet$ ./run_ssl.sh
+
+Платформа запустится в режиме односторонней аутентификации.
+
+В случае, если нужно повысить уровень безопасности, можно включить двустороннюю
+аутентификацию, то есть когда сервер и клиент проверяют сертификаты друг друга.
+Для этого в файле ``.env`` перед запуском ``run_ssl.sh`` необходимо
+поправить ещё две переменные:
+
+::
+
+  UVICORN_CERT_REQUIRED=1
+  NGINX_CERT_REQUIRED=on
+
+Описание работы скриптов генерации сертификатов
++++++++++++++++++++++++++++++++++++++++++++++++
+Теперь подробней рассмотрим выполненные шаги.
+
 Рассмотрим ситуацию, когда платформа, а также её клиенты
 (поставщики и потребители данных) находятся в сети, изолированной
 от интернета, а также не имеющей своего сервера DNS.
 
 Необходимо организовать общение платформы с клиентами по шифрованному каналу.
 
-Глава содержит последовательность всех шагов, обеспечивающих необходимый
-функционал, без подробного пояснения шагов. Для более подробной информации
-можно посмотреть статьи в интернете на заданную тему.
+Для корректной работы всех компонентов нам необходимо:
 
-Создадим в домашней папке новую папку `tls` и все действия
-будем выполнять в ней.
+#. Сертификат центра сертификации. Так называемый "корневой" сертификат.
+#. Сертификат сервера, на котором будут работать контейнеры нашей платформы.
+#. Для случая двухсторонней аутентификации, когда сервер и клиент проверяют
+   сертификаты друг друга - ещё и сертификат клиента.
 
-После выполнения всех шагов мы получим:
+Все необходимые действия выполняются одним скриптом: ``gen_crt.sh`` в папке
+проекта ``mpc-peresvet`` ``certificates``.
 
-#. Папка `rootCA` для хранения корневого сертификата и приватного ключа.
-#. Корневой сертификат центра сертификации нашей локальной сети и ключ к нему.
-#. Сертификат сервера с ключом.
-#. Сертификат клиента на случай, если клиент будет
-   аутентифицирован/авторизован по сертификату.
+Скрипт ``gen_crt.sh`` запускает последовательно три других скрипта из папки
+``certificates``:
 
-**Все шаги выполнялись на Ubuntu 22.04**
+#. ``01. gen_root.sh``
+#. ``02. gen_server.sh``
+#. ``03. gen_client.sh``
 
-Процедура создания цепочки сертификатов
-+++++++++++++++++++++++++++++++++++++++
-.. raw:: html
+При запуске всех трёх скриптов применяются параметры по умолчанию, описанные
+ниже.
 
-   <details>
-   <summary>
-        1. Создаём в домашней папке папку <b>tls</b>.
-   </summary>
+01. gen_root.sh
+~~~~~~~~~~~~~~~
+Скрипт создаёт корневой сертификат. То есть сертификат центра сертификации.
 
 .. code-block:: bash
 
-   $ cd ~
-   $ mkdir tls
-   $ cd tls
+   $ ./01.\ gen_root.sh -d 3654 -k 4096 -s "/CN=root_ca_center"
 
-.. raw:: html
+``d`` - срок в днях, на сколько выдаётся сертификат;
 
-   </details>
-   <br />
+``k`` - длина ключа шифрования;
 
-.. raw:: html
+``s`` - имя центра сертификации в том виде, как его принимает утилита ``openssl``.
 
-   <details>
-   <summary>
-        2. Создадим корневой сертификат локального сертификационного центра.
-   </summary>
+У каждого параметра указано его значение по умолчанию.
 
-.. code-block:: bash
-
-   # создадим для корневого сертификата отдельную папку
-   $ mkdir rootCA && cd rootCA
-
-   # создадим одной командой ключ, запрос на подпись и сам сертификат сроком действия 10 лет
-   # в процессе выполнения команды будут запрошены данные, вводить можно только
-   # Common Name:
-   #
-   # You are about to be asked to enter information that will be incorporated
-   # into your certificate request.
-   # What you are about to enter is what is called a Distinguished Name or a DN.
-   # There are quite a few fields but you can leave some blank
-   # For some fields there will be a default value,
-   # If you enter '.', the field will be left blank.
-   # -----
-   # Country Name (2 letter code) [AU]:
-   # State or Province Name (full name) [Some-State]:
-   # Locality Name (eg, city) []:
-   # Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-   # Organizational Unit Name (eg, section) []:
-   # Common Name (e.g. server FQDN or YOUR name) []:Local CA
-   # Email Address []:
-   $ openssl req -new -newkey rsa:4096 -nodes -keyout rootCA.key -x509 -days 3654 -out rootCA.crt
-   $ cd ..
-
-.. raw:: html
-
-   </details>
-   <br />
-
-.. raw:: html
-
-   <details>
-   <summary>
-        3. Создаём сертификат для сервера, на котором будет работать наше приложение
-   </summary>
-   Сертификат и ключ сервера будут храниться в отдельной папке. Для удобства
-   пусть папка называется так же, как и сервер. Допустим, <b>MPCServer</b>:
+02. gen_server.sh
+~~~~~~~~~~~~~~~~~
+Скрипт создаёт сертификат для сервера, на котором будет работать платформа.
+Сертификат подписывается корневым сертификатом, созданным предыдущим скриптом.
 
 .. code-block:: bash
 
-   $ mkdir MPCServer
+   $ ./02.\ gen_server.sh -h <имя_компьютера> -d 3654 -k 4096 -s "/CN=<имя_компьютера>"
 
-Создаём ключ сервера:
+``h`` - имя сервера, для которого генерируется сертификат, по умолчанию берётся
+имя компьютера, на котором запускаетс скрипт;
 
-.. code-block:: bash
+``d`` - срок в днях, на сколько выдаётся сертификат;
 
-   $ openssl genrsa -out MPCServer/MPCServer.key 4096
+``k`` - длина ключа шифрования;
 
-Запрос на подпись серверного сертификата.
+``s`` - имя сервера в том виде, как его принимает утилита ``openssl``.
 
-**Обратите внимание, что в качестве Common Name НЕОБХОДИМО указать имя
-сервера. В нашем случае - MPCServer:**
+У каждого параметра указано его значение по умолчанию.
 
-.. code-block:: bash
-
-   # You are about to be asked to enter information that will be incorporated
-   # into your certificate request.
-   # What you are about to enter is what is called a Distinguished Name or a DN.
-   # There are quite a few fields but you can leave some blank
-   # For some fields there will be a default value,
-   # If you enter '.', the field will be left blank.
-   # -----
-   # Country Name (2 letter code) [AU]:
-   # State or Province Name (full name) [Some-State]:
-   # Locality Name (eg, city) []:
-   # Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-   # Organizational Unit Name (eg, section) []:
-   # Common Name (e.g. server FQDN or YOUR name) []:MPCServer
-   # Email Address []:
-
-   # Please enter the following 'extra' attributes
-   # to be sent with your certificate request
-   # A challenge password []:
-   # An optional company name []:
-
-   $ openssl req -new -key MPCServer/MPCServer.key -out MPCServer/MPCServer.csr
-
-Создаём сертификат для сервера, подписывая его корневым сертификатом и ключом
-нашего локального сертификационного центра:
+03. gen_client.sh
+~~~~~~~~~~~~~~~~~
+Скрипт создаёт сертификат клиента, который необходим для случая двусторонней
+аутентификации.
 
 .. code-block:: bash
 
-   $ openssl x509 -req -in MPCServer/MPCServer.csr -CA rootCA/rootCA.crt -CAkey rootCA/rootCA.key -CAcreateserial -out MPCServer/MPCServer.crt -days 3654
+   $ 03.\ gen_client.sh  -d 3654 -k 4096 -s "/CN=client<some_GUID>"
 
-Упакуем сертификат и ключ сервера в один пакет для подгрузки в конфигурацию
-NGINX.Unit:
+``d`` - срок в днях, на сколько выдаётся сертификат;
 
-.. code-block:: bash
+``k`` - длина ключа шифрования;
 
-   $ cat MPCServer/MPCServer.crt MPCServer/MPCServer.key > MPCServer/MPCServer_pack.pem
+``s`` - имя клиента в том виде, как его принимает утилита ``openssl``,
+  в случае отсутствия этого ключа для идентификации клиента генерируется
+  новый GUID.
 
-.. raw:: html
+  .. note::
 
-   </details>
-   <br />
+     Прокси сервер Nginx будет передавать имя клиента в платформу, добавляя
+     к запросу заголовок ``X-SSL-Client``.
 
-.. raw:: html
+У каждого параметра указано его значение по умолчанию.
 
-   <details>
-   <summary>4. Генерация клиентского сертификата</summary>
+Структура папки с сертификатами
++++++++++++++++++++++++++++++++
+В результате работы скриптов в корневой папке проекта будет создана папка
+``tls`` примерно следующего содержания:
 
-В том случае, если аутентификация/авторизация пользователя или клиентского
-приложения происходит с помощью сертификата (допустим, клиент -
-это программа-поставщик данных), то необходимо создать клиентский сертификат.
+::
 
-Создадим его также в отдельной папке.
+   tls   # общая папка для всех сертификатов
+     - clients # папка для сертификатов клиентов
+        - CN=client-e6d661ae-e6f4-4f05-8647-324ce7aa31b9 # папка сертификата конкретного клиента
+            client.crt # сертификат клиента
+            client.csr # запрос на подпись сертификата (можно удалить)
+            client.key # секретный ключ клиента
+     - rootCA
+        - rootCA.crt # корневой сертификат центра СА
+        - rootCA.key # секретный ключ центра
+     - servers # папка для сертификатов серверов
+        - <server_name> # папка сертификата конкретного сервера
+          - <server_name>.crt # сертификат сервера
+          - <server_name>.csr # запрос на подпись (можно удалить)
+          - <server_name>.key # секретный ключ сервера
+          - <server_name>.pem # пакет из сертификата и ключа сервера
 
-.. code-block:: bash
+Все сертификаты и ключи - в формате PEM.
 
-   $ mkdir client && cd client
+Подключение клиента к платформе
++++++++++++++++++++++++++++++++
+Процедура, которую необходимо выполнить перед тем, как работать в безопасном
+режиме с платформой, зависит от клиентского приложения.
 
-Создадим клиентский ключ:
-
-.. code-block:: bash
-
-   $ openssl genrsa -out client.key 4096
-
-Запрос на подпись сертификата. В качестве Common Name указываем имя клиента,
-по которому будем его аутентифицировать:
-
-.. code-block:: bash
-
-   # You are about to be asked to enter information that will be incorporated
-   # into your certificate request.
-   # What you are about to enter is what is called a Distinguished Name or a DN.
-   # There are quite a few fields but you can leave some blank
-   # For some fields there will be a default value,
-   # If you enter '.', the field will be left blank.
-   # -----
-   # Country Name (2 letter code) [AU]:
-   # State or Province Name (full name) [Some-State]:
-   # Locality Name (eg, city) []:
-   # Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-   # Organizational Unit Name (eg, section) []:
-   # Common Name (e.g. server FQDN or YOUR name) []:some_client
-   # Email Address []:
-
-   # Please enter the following 'extra' attributes
-   # to be sent with your certificate request
-   # A challenge password []:
-   # An optional company name []:
-   $ openssl req -new -key client.key -out client.csr
-
-Создаём сертификат для клиента, подписывая его корневым сертификатом
-локального сертификационного центра:
+Например, утилита командной строки ``curl`` работает с системным хранилищем
+сертификатов центров сертификации. Поэтому для работы ``curl`` необходимо
+поместить сертификат нашего локального центра сертификации
+в локальное хранилище:
 
 .. code-block:: bash
 
-   $ openssl x509 -req -in client.csr -CA ../rootCA/rootCA.crt -CAkey ../rootCA/rootCA.key -CAcreateserial -out client.crt -days 3654
+   $ sudo cp tls/rootCA.crt /usr/local/share/ca-certificates/
+   $ sudo update-ca-certificates
 
-.. raw:: html
+Популярные браузеры используют собственные хранилища корневых сертификатов.
+Поэтому необходимо ознакомиться с инструкцией для конкретного браузера, как
+добавить в его хранилище сертификат ``tls/rootCA/rootCA.crt``, а для случая
+двусторонней аутентификации - ещё и клиентский сертификат.
 
-   </details>
-   <br />
-
-Теперь мы имеем коплект сертификатов для организации безопасного канала связи
-между платформой и клиентом, включая случай аутентификации/авторизации
-пользователя с помощью сертификата.
+В общем случае, лучше ознакомиться с инструкцией на конкретную программу, как
+она работает с сертификатами.
