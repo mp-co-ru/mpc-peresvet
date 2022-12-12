@@ -132,3 +132,7 @@ dmypy.json
 vm-data/
 
 src/*.json
+
+tls/
+
+test_*.py
