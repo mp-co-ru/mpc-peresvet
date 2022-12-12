@@ -7,7 +7,7 @@ services:
      - "8089:8089"
     volumes:
       - ./load_tests/:/mnt/locust/
-    command: -f /mnt/locust/locustfile.py --master -H http://master:8089
+    command: -f /mnt/locust/locustfile.py --master -H http://locust_master:8089
 
   locust_worker:
     image: locustio/locust
@@ -17,18 +17,32 @@ services:
     depends_on:
       - peresvet_load_test
 
+  nginx:
+      image: nginx:latest
+      container_name: nginx_load_test
+      ports:
+        - ${HTTP_PORT}:${HTTP_PORT}
+      #restart: always
+      volumes:
+        - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf
+        - ./config/nginx/no_ssl/default.conf.template:/etc/nginx/templates/default.conf.template:rw,cached
+      environment:
+        HTTP_PORT: ${HTTP_PORT}
+        HTTPS_PORT: ${HTTPS_PORT}
+        TZ: ${TIME_ZONE}
+      depends_on:
+        - peresvet
+
   peresvet:
-    container_name: peresvet_load_test
+    #container_name: peresvet_load_test
     build:
       context: .
       dockerfile: Docker/Dockerfile.peresvet
 
-    command: uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000 --ws-ping-interval 10 --ws-ping-timeout 10
+    command: uvicorn app.main:app --workers 1 --host 0.0.0.0 --port ${HTTP_PORT} --ws-ping-interval 10 --ws-ping-timeout 10
 
     volumes:
       - ./src/:/usr/src/
-    ports:
-      - 8002:8000
     depends_on:
       - ldap
       - victoriametrics
@@ -44,9 +58,9 @@ services:
   ldap:
     container_name: ldap_load_test
     image: mpc/ws_ldap_for_load_test:0.2
-    ports:
-      - 389:389
-      - 636:636
+    #ports:
+    #  - 389:389
+    #  - 636:636
     environment:
       TZ: ${TIME_ZONE}
 
@@ -54,8 +68,8 @@ services:
     image: victoriametrics/victoria-metrics
     container_name: vm_load_test
     command: -opentsdbHTTPListenAddr=:4242
-    ports:
-      - 8428:8428
-      - 4242:4242
+    #ports:
+    #  - 8428:8428
+    #  - 4242:4242
     environment:
       TZ: ${TIME_ZONE}

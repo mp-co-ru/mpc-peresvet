@@ -1,3 +1,5 @@
+> :warning: English version of docs is frozen till July 2023.
+
 # Introduction
 This project deals with data acquisition, GUI, decision making.
 Fileds: smart home, IoT, SCADA, dispatching and monitoring systems.
@@ -6,7 +8,7 @@ Open documentation (index.html) and read Concept for current functionality and I
 # Development
 Approximate stages of development are described here.
 # Debug
-So, this chapter deals with VS Code.  
+So, this chapter deals with VS Code.
 Thanks to https://github.com/Kludex/fastapi-docker-debug:
 1. Create new terminal in VSCode: menu `Terminal -> New terminal` (`Терминал -> Создать терминал`).
 2. In new terminal's command line run: ```$ docker-compose -f docker-compose.yml -f docker-compose.debug.yml up```
@@ -39,4 +41,3 @@ Peresvet:
 6. External method calls
 7. Alerts
 8. RabbitMQ
-

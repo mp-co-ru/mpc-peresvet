@@ -1,75 +1,26 @@
-Installation
-============
-Устанавливаем систему на операционную систему Ubuntu Desktop 20.04.3.
+Установка
+=========
+.. warning::
 
-Установка состоит из двух частей.
+   Установка тестировалась на Ubuntu 22.04.
 
-Grafana
-+++++++
-Выбираем Open-Source (OSS) версию Grafana, так как пользоваться хотим бесплатным продуктом.
+Так как все компоненты системы разворачиваются в виде докер-контейнеров,
+установка системы очень проста.
 
-Enterprise-версия отличается от OSS только наличием заблокированных возможностей, которыми можно пользоваться, 
-купив лицению.
+1. Установите `Docker <https://docs.docker.com/get-docker/>`_.
+2. Скопируйте или склонируйте на свой компьютер этот проект.
+   `Ссылка <https://github.com/mp-co-ru/mpc-peresvet>`_.
+3. Зайдите в корневую папку проекта и запустите на исполнение файл ``run.sh``.
+   В результате запустятся основные контейнеры:
+   1. Платформа (peresvet);
+   2. Иерархическая база (ldap);
+   3. База данных реального времени (victoriametrics);
+   4. Прокси-сервер Nginx (nginx);
+   5. Grafana (grafana).
 
-Согласно `инструкциям <https://grafana.com/docs/grafana/latest/installation/debian/#install-on-debian-or-ubuntu>`_ выполняем следующие шаги:
+В результате платформа, а также клиент Grafana будут запущены в режиме
+выключенной безопасности.
 
-#. Добавляем ключ:
+Для запуска платформы в безопасном режиме необходимо:
 
-   .. code-block:: bash
-      
-      $ wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-
-#. Добавляем для пакетного менеджера ссылку на репозиторий Grafana:
-
-   .. code-block:: bash
-      
-      $ echo "deb https://packages.grafana.com/oss/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
-
-#. Обновляем список пакетов:
-
-   .. code-block:: bash
-
-      $ sudo apt update
-
-#. Устанавливаем Grafana:
-
-   .. code-block:: bash
-
-      $ sudo apt install grafana
-
-#. Разрешим запускаться Grafan'е автоматически при включении компьютера:
-
-   .. code-block:: bash
-
-      $ sudo systemctl enable grafana-server
-
-#. Запустим Grafan'у:
-
-   .. code-block:: bash
-  
-      $ sudo systemctl start grafana-server
-
-#. Проверяем, работает ли Grafana. Для этого запускаем браузер и в строке адреса пишем: ``http://localhost:3000``.
-   Если мы всё сделали правильно, появится чёрная страница, на которой в качестве имени пользователя и пароля необходимо ввести ``admin``.  
-   Сразу же перейдём на страницу смены пароля, а, сменив его, увидим стартовую страницу Grafan'ы:
-
-   .. image:: pics/grafana.png
-
-Установка Grafan'ы завершена.
-
-Описание настройки работы совместно с Victoriametrics - ниже.
-
-Victoriametrics
-+++++++++++++++
-
-#. Выполняем в терминале команду:
-
-   .. code-block:: bash
-
-      $ snap install victoriametrics
-
-#. Проверяем установку: запускаем браузер и в адресной строке пишем ``http://localhost:8428``. Должна появиться страница:
-
-   .. image:: pics/vicm.png
-
-Victoriametrics будет автоматически стартовать при запуске компьютера.
+1. Подготовить необходимые сертификаты.
