@@ -34,7 +34,7 @@ services:
         - peresvet
 
   peresvet:
-    #container_name: peresvet_load_test
+    container_name: peresvet_load_test
     build:
       context: .
       dockerfile: Docker/Dockerfile.peresvet
@@ -58,8 +58,8 @@ services:
   ldap:
     container_name: ldap_load_test
     image: mpc/ws_ldap_for_load_test:0.2
-    #ports:
-    #  - 389:389
+    ports:
+      - 3890:389
     #  - 636:636
     environment:
       TZ: ${TIME_ZONE}
