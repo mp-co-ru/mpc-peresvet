@@ -105,11 +105,14 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
         svc.logger.info(f"Тэги, привязанные к хранилищу `{self.data.attributes.cn}`, прочитаны.")
 
-    async def connect(self): pass
+    async def connect(self):
+        pass
 
-    async def set_data(self, data): pass
+    async def set_data(self, data):
+        pass
 
-    async def get_data(self, Any):  pass
+    async def get_data(self, Any):
+        pass
 
     def _add_subnodes(self) -> None:
         data = PrsModelNodeCreate()

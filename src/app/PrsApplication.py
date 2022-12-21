@@ -39,12 +39,12 @@ class PrsApplication(FastAPI):
     def _set_data_storages(self):
         svc.logger.info("Start load datastorages...")
 
-        found, _, response, _ = svc.ldap.get_read_conn().search(
+        found, _, res, _ = svc.ldap.get_read_conn().search(
             search_base=svc.config["LDAP_DATASTORAGES_NODE"],
             search_filter='(cn=*)', search_scope=LEVEL, dereference_aliases=DEREF_NEVER,
             attributes=['entryUUID', 'prsEntityTypeCode', 'prsDefault'])
         if found:
-            for item in response:
+            for item in res:
                 attrs = dict(item['attributes'])
 
                 if attrs['prsEntityTypeCode'] != CN_DS_VICTORIAMETRICS:
@@ -104,15 +104,15 @@ class PrsApplication(FastAPI):
         return PrsTagEntry(id=id)
 
     def get_node_id_by_dn(self, dn: str) -> str:
-        found, _, response, _ = svc.ldap.get_read_conn().search(
+        found, _, res, _ = svc.ldap.get_read_conn().search(
             search_base=dn, search_filter='(cn=*)', search_scope=BASE, dereference_aliases=DEREF_NEVER, attributes='entryUUID')
         if found:
-            return response[0]['attributes']['entryUUID']
+            return res[0]['attributes']['entryUUID']
         else:
             return None
 
     def get_node_dn_by_id(self, id: str) -> str:
-        found, _, response, _ = svc.ldap.get_read_conn().search(
+        found, _, res, _ = svc.ldap.get_read_conn().search(
             search_base=svc.config["LDAP_BASE_NODE"],
             search_filter=f"(entryUUID={id})",
             search_scope=SUBTREE,
@@ -120,7 +120,7 @@ class PrsApplication(FastAPI):
             attributes='cn'
         )
 
-        return response[0]['dn'] if found else None
+        return res[0]['dn'] if found else None
 
     async def data_set(self, data: PrsData) -> Response:
         """

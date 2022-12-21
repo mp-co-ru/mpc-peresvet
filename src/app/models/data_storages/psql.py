@@ -1,29 +1,26 @@
 import json
 import copy
-from typing import Dict, Union
+from typing import Dict
 
-import aiohttp
 from fastapi import Response
 
 from app.models.DataStorage import PrsDataStorageEntry
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
 
-class PrsVictoriametricsEntry(PrsDataStorageEntry):
+class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
     def __init__(self, **kwargs):
-        super(PrsVictoriametricsEntry, self).__init__(**kwargs)
+        super(PrsPostgreSQLEntry, self).__init__(**kwargs)
 
         self.tag_cache = {}
         if isinstance(self.data.attributes.prsJsonConfigString, dict):
             js_config = self.data.attributes.prsJsonConfigString
         else:
             js_config = json.loads(self.data.attributes.prsJsonConfigString)
-        self.put_url = js_config['putUrl']
-        self.get_url = js_config['getUrl']
 
-        #self.session = None
-        self.session = aiohttp.ClientSession()
+
+
 
     def _format_data_store(self, tag: PrsTagEntry) -> None | Dict:
         if tag.data.attributes.prsStore:
