@@ -7,10 +7,11 @@ from app.svc.Services import Services as svc
 from app.models.Tag import PrsTagEntry, PrsTagCreate
 from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.data_storages.vm import PrsVictoriametricsEntry
+from app.models.data_storages.psql import PrsPostgreSQLEntry
 from app.models.Data import PrsData
 from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
 import app.times as times
-from app.const import CN_DS_POSTGRESQL, CN_DS_VICTORIAMETRICS
+from app.const import CNDataStorageTypes as CN_DS_T
 
 class PrsApplication(FastAPI):
 
@@ -46,11 +47,16 @@ class PrsApplication(FastAPI):
         if found:
             for item in res:
                 attrs = dict(item['attributes'])
+                ds_uuid = attrs['entryUUID']
+                match attrs['prsEntityTypeCode']:
+                    case CN_DS_T.CN_DS_VICTORIAMETRICS:
+                        new_ds = PrsVictoriametricsEntry(id=ds_uuid)
+                    case CN_DS_T.CN_DS_POSTGRESQL:
+                        new_ds = PrsPostgreSQLEntry(id=ds_uuid)
+                    case _:
+                        svc.logger.info("Unsupported type of data storage {ds_uuid}.")
+                        continue
 
-                if attrs['prsEntityTypeCode'] != CN_DS_VICTORIAMETRICS:
-                    continue
-
-                new_ds = PrsVictoriametricsEntry(id=attrs['entryUUID'])
                 self._reg_data_storage_in_cache(new_ds)
 
         if svc.data_storages:
@@ -87,7 +93,7 @@ class PrsApplication(FastAPI):
             if not payload.attributes.prsDefault:
                 payload.attributes.prsDefault = True
 
-        if payload.attributes.prsEntityTypeCode != CN_DS_VICTORIAMETRICS:
+        if payload.attributes.prsEntityTypeCode != CN_DS_T.CN_DS_VICTORIAMETRICS:
             raise HTTPException(status_code=422, detail="Поддерживается только создание хранилища Victoriametrics (prsEntityTypeCode = 1)")
 
         new_ds = PrsVictoriametricsEntry(data=payload)

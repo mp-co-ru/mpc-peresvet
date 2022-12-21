@@ -3,6 +3,8 @@
 
 .. toctree::
    :maxdepth: 2
-   :caption: Содержание:
+   :caption: Содержание
 
    Сертификаты безопасности<self-signed-certificates>
+   Хранилища данных<data-storages>
+   API<api>

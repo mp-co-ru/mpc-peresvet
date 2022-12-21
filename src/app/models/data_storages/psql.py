@@ -20,8 +20,6 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
             js_config = json.loads(self.data.attributes.prsJsonConfigString)
 
 
-
-
     def _format_data_store(self, tag: PrsTagEntry) -> None | Dict:
         if tag.data.attributes.prsStore:
             data_store = json.loads(tag.data.attributes.prsStore)

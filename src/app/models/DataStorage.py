@@ -8,7 +8,6 @@ from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeEntry, PrsModelNodeCreate
 from app.models.Tag import PrsTagEntry
-from app.const import CN_DS_VICTORIAMETRICS, CN_DS_POSTGRESQL
 
 class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """

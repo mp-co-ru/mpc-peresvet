@@ -14,7 +14,6 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
     def __init__(self, **kwargs):
         super(PrsVictoriametricsEntry, self).__init__(**kwargs)
 
-        self.tag_cache = {}
         if isinstance(self.data.attributes.prsJsonConfigString, dict):
             js_config = self.data.attributes.prsJsonConfigString
         else:
@@ -42,7 +41,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
     async def connect(self) -> int:
         #if self.session is None:
         #    self.session = aiohttp.ClientSession()
-        async with self.session.get("{}{}".format(self.get_url, "?match[]=vm_free_disk_space_bytes")) as response:
+        async with self.session.get(f"{self.get_url}?match[]=vm_free_disk_space_bytes") as response:
             return response.status
 
     async def set_data(self, data):
