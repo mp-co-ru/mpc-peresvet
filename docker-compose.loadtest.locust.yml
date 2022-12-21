@@ -15,7 +15,7 @@ services:
       - ./load_tests/:/mnt/locust/
     command: -f /mnt/locust/locustfile.py --worker --master-host locust_master
     depends_on:
-      - peresvet_load_test
+      - peresvet
 
   nginx:
       image: nginx:latest
