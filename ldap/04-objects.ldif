@@ -65,7 +65,7 @@ cn: methods
 dn: cn=vm,cn=dataStorages,cn=prs
 changetype: add
 objectClass: prsDataStorage
-prsDefault: TRUE
+prsDefault: FALSE
 prsEntityTypeCode: 1
 prsJsonConfigString: {"putUrl": "http://vm:4242/api/put", "getUrl": "http://vm:8428/api/v1/export"}
 description: Vicrotiametrics data storage
@@ -89,7 +89,7 @@ cn: alerts
 dn: cn=postgres,cn=dataStorages,cn=prs
 changetype: add
 objectClass: prsDataStorage
-prsDefault: FALSE
+prsDefault: TRUE
 prsEntityTypeCode: 0
 prsJsonConfigString: {"dsn":"postgres://postgres:Peresvet21@postgres:5433/peresvet}
 description: Default data storage
