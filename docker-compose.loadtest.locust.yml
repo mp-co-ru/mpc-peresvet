@@ -34,7 +34,6 @@ services:
         - peresvet
 
   peresvet:
-    container_name: peresvet_load_test
     build:
       context: .
       dockerfile: Docker/Dockerfile.peresvet
