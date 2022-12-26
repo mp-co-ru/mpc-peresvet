@@ -43,7 +43,7 @@ class PrsConnectorEntry(PrsModelNodeEntry):
         data.attributes = PrsModelNodeCreateAttrs(cn='tags')
         PrsModelNodeEntry(data=data)
 
-    def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
+    async def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
         '''
         Метод создаёт ссылку на тэг внутри узла коннектора.
         '''

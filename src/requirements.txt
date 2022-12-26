@@ -9,6 +9,7 @@ validators
 aiohttp[speedups]
 python-dateutil
 websockets
+asyncpg
 
 #dev
 pytest

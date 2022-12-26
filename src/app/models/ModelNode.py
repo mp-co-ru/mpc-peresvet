@@ -74,8 +74,8 @@ class PrsModelNodeCreate(BaseModel):
         if v is not None:
             try:
                 UUID(v)
-            except:
-                raise ValueError('parentId must be uuid')
+            except Exception as ex:
+                raise ValueError('parentId must be uuid') from ex
         return v
 
 class PrsResponseCreate(BaseModel):
@@ -90,7 +90,7 @@ class PrsModelNodeEntry:
 
     objectClass (str) - имя класса в схеме ldap
     default_parent_dn (str) - имя родительского узла в иерархии по умолчанию
-    payload_class (class) - класс, используемых в запросах создания/получения данных
+    payload_class (class) - класс используемых в запросах создания/получения данных
 
     _add_subnodes - добавление дочерних узлов
     _add_fields_to_get_response - добавление к стандартному ответу, отдаваемому клиенту при его запросе get дополнительных атрибутов.
@@ -157,8 +157,8 @@ class PrsModelNodeEntry:
         else:
             try:
                 UUID(id)
-            except:
-                raise HTTPException(status_code=422, detail=f"Некорректный формат id: {id}.")
+            except Exception as ex:
+                raise HTTPException(status_code=422, detail=f"Некорректный формат id: {id}.") from ex
 
             self.data = self.__class__.payload_class()
             status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],

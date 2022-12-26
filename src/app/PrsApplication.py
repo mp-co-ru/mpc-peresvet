@@ -37,7 +37,7 @@ class PrsApplication(FastAPI):
         if ds.data.attributes.prsDefault:
             svc.default_data_storage_id = ds.id
 
-    def _set_data_storages(self):
+    async def _set_data_storages(self):
         svc.logger.info("Start load datastorages...")
 
         found, _, res, _ = svc.ldap.get_read_conn().search(
@@ -50,9 +50,9 @@ class PrsApplication(FastAPI):
                 ds_uuid = attrs['entryUUID']
                 match attrs['prsEntityTypeCode']:
                     case CN_DS_T.CN_DS_VICTORIAMETRICS:
-                        new_ds = PrsVictoriametricsEntry(id=ds_uuid)
+                        new_ds = await PrsVictoriametricsEntry(id=ds_uuid)
                     case CN_DS_T.CN_DS_POSTGRESQL:
-                        new_ds = PrsPostgreSQLEntry(id=ds_uuid)
+                        new_ds = await PrsPostgreSQLEntry(id=ds_uuid)
                     case _:
                         svc.logger.info("Unsupported type of data storage {ds_uuid}.")
                         continue
@@ -65,7 +65,7 @@ class PrsApplication(FastAPI):
 
         svc.logger.info("Хранилища данных загружены.")
 
-    def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
+    async def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
         if not svc.data_storages:
             svc.logger.info("Невозможно создать тэг без зарегистрированных хранилищ данных.")
             raise HTTPException(status_code=424, detail="Перед созданием тэга необходимо зарегистрировать хотя бы одно хранилище данных.")
@@ -74,11 +74,11 @@ class PrsApplication(FastAPI):
             payload.dataStorageId = svc.default_data_storage_id
         new_tag = PrsTagEntry(payload)
 
-        svc.data_storages[payload.dataStorageId].reg_tags(new_tag)
+        await svc.data_storages[payload.dataStorageId].reg_tags(new_tag)
 
         if payload.connectorId is not None:
             connector = PrsConnectorEntry(id=payload.connectorId)
-            connector.reg_tags(new_tag)
+            await connector.reg_tags(new_tag)
 
         svc.logger.info(f"Тэг '{new_tag.data.attributes.cn}'({new_tag.id}) создан.")
 

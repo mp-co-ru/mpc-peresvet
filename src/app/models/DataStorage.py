@@ -8,55 +8,64 @@ from ldap3 import LEVEL, DEREF_SEARCH, ALL_ATTRIBUTES
 from app.svc.Services import Services as svc
 from app.models.ModelNode import PrsModelNodeCreateAttrs, PrsModelNodeEntry, PrsModelNodeCreate
 from app.models.Tag import PrsTagEntry
+from app.const import CNDataStorageTypes
 
 class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
     """
     Атрибуты сущности `dataStorage`.
     Используются при создании/изменении/получении хранилищ данных.
     """
-    prsEntityTypeCode: int = Field(1, title='Код типа сущности',
+    prsEntityTypeCode: int = Field(0, title='Код типа сущности',
         description=(
+            '- 0 - PostgreSQL\n'
             '- 1 - Victoriametrics'
         )
     )
 
     @root_validator
     @classmethod
-    def check_vm_config(cls, values):
+    def check_config(cls, values):
 
         def uri_validator(x):
-            try:
-                result = urlparse(x)
-                return all([result.scheme, result.netloc])
-            except Exception as _:
-                return False
+            result = urlparse(x)
+            return all([result.scheme, result.netloc])
 
         type_code = values.get('prsEntityTypeCode')
-        if type_code == 1:
-            config = values.get('prsJsonConfigString')
-            if config is not None:
-                try:
-                    if isinstance(config, dict):
-                        js = config
-                    else:
-                        js = json.loads(config)
-                    put_url = js['putUrl']
-                    get_url = js['getUrl']
-                    if uri_validator(put_url) and uri_validator(get_url):
-                       return values
-                except Exception as _:
-                    pass
+        config = values.get('prsJsonConfigString')
 
+        if not config:
+            raise ValueError((
+                "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
+            ))
+
+        if isinstance(config, str):
+            config = json.loads(config)
+
+        if type_code == 1:
+            put_url = config['putUrl']
+            get_url = config['getUrl']
+            if uri_validator(put_url) and uri_validator(get_url):
+                return values
             raise ValueError((
                 "Конфигурация (атрибут prsJsonConfigString) для Victoriametrics должна быть вида:\n"
                 "{'putUrl': 'http://<server>:<port>/api/put', 'getUrl': 'http://<server>:<port>/api/v1/export'}"
             ))
-        else:
-            return values
+        elif type_code == 0:
+            dsn = config["dsn"]
+            if urlparse(dsn):
+                return values
+            raise ValueError((
+                "Конфигурация (атрибут prsJsonConfigString) для PostgreSQL должна быть вида:\n"
+                "{'dsn': 'postgres://<user>:<password>@<host>:<port>/<database>?<option>=<value>'"
+            ))
+
+        raise ValueError((
+            "Неизвестный тип хранилища данных."
+        ))
 
 class PrsDataStorageCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=CN_DS_POSTGRESQL)
+    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=CNDataStorageTypes.CN_DS_POSTGRESQL)
 
     @validator('parentId', check_fields=False, always=True)
     @classmethod
@@ -75,19 +84,24 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         super(PrsDataStorageEntry, self).__init__(**kwargs)
 
         self.tags_node = f"cn=tags,{self.dn}"
-        self._read_tags()
+        self.alerts_node = f"cn=alerts,{self.dn}"
+
+        #self._read_tags()
+
+    def __await__(self, **kwargs):
+        self._read_tags().__await__()
 
     def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
         res = tag.data.attributes.prsStore
         if res is not None:
             try:
                 res = json.loads(tag.data.attributes.prsStore)
-            except Exception as _:
+            except json.JSONDecodeError as _:
                 pass
 
         return res
 
-    def _read_tags(self):
+    async def _read_tags(self):
 
         result, _, response, _ = svc.ldap.get_read_conn().search(
             search_base=self.tags_node,
@@ -122,7 +136,14 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         data.attributes.cn = 'alerts'
         PrsModelNodeEntry(data=data)
 
-    def reg_tags(self, tags: Union[PrsTagEntry, str, List[str], List[PrsTagEntry]]):
+    async def _form_tag_cache(self, tag: PrsTagEntry) -> Dict:
+        return json.loads(tag.data.attributes.prsStore)
+
+    async def create_tag_store(self, tag: PrsTagEntry):
+        # метод вызывается при создании тега
+        pass
+
+    async def reg_tags(self, tags: PrsTagEntry | str | List[str] | List[PrsTagEntry]):
         if isinstance(tags, (str, PrsTagEntry)):
             tags = [tags]
 
@@ -139,4 +160,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
                     "prsStore": json.dumps(tag_store)
                 })
 
-            svc.set_tag_cache(tag_entry, "data_storage", tag_store)
+            await self.create_tag_store(tag_entry)
+
+            tag_cache = await self._form_tag_cache(tag_entry)
+            svc.set_tag_cache(tag_entry, "data_storage", tag_cache)
