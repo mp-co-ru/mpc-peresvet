@@ -9,7 +9,7 @@ import asyncpg as apg
 from app.models.DataStorage import PrsDataStorageEntry
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
-from app.const import CNHTTPExceptionCodes as HEC
+from app.const import CNHTTPExceptionCodes as HEC, CNTagValueTypes as TVT
 
 class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
@@ -32,8 +32,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
     def _format_data_store(self, tag: PrsTagEntry) -> None | Dict:
         if not tag.data.attributes.prsStore:
             return {
-                'table': f"t_{tag.id}",
-                'u': tag.data.attributes.prsUpdate # флаг обновления значения
+                'table': f"t_{tag.id}"
             }
 
         try:
@@ -52,40 +51,48 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
     async def create_tag_store(self, tag: PrsTagEntry):
 
-        tbl_name = tag.data.attributes.prsStore['table']
-
-        s_type = None
-        match tag.data.attributes.prsValueTypeCode:
-            case 1:
-                s_type = "bigint"
-            case 2:
-                s_type = "double precision"
-            case 3:
-                s_type = "text"
-            case 4:
-                s_type = "jsonb"
-            case _:
-                svc.logger.error(f"Тег: {tag.id}; неизвестный тип данных: {tag.data.attributes.prsValueTypeCode}")
-                raise HTTPException(HEC.CN_500, f"Тег: {tag.id}; неизвестный тип данных: {tag.data.attributes.prsValueTypeCode}")
-    # -------------------------------------------------------------------------
-
-        # Запрос на создание таблицы в РСУБД
-        query = (f'CREATE TABLE public."{tbl_name}" ('
-            '"id" serial primary key,'
-            '"x" bigint NOT NULL,'
-            '"y" {s_type},'
-            '"q" int);'
-            # Создание индекса на поле "метка времени" ("ts")
-            'CREATE INDEX "{tbl_name}_idx" ON public."{tbl_name}" '
-            'USING btree ("x");')
-
-        if tag.data.attributes.prsValueTypeCode == 4:
-            query += (f'CREATE INDEX "{tbl_name}_json__idx" ON public."{tbl_name}" '
-                        'USING gin ("y" jsonb_path_ops);')
-
         with self.conn_pool.acquire() as conn:
-            await conn.execute(query)
+            tbl_name = tag.data.attributes.prsStore['table']
 
+            res = await conn.fetchval(
+                (
+                    f"EXISTS ("
+                    f"SELECT FROM information_schema.tables"
+                    f"WHERE  table_name = '{tbl_name}')"
+                )
+            )
+            if not res:
+
+                if tag.data.attributes.prsValueTypeCode == TVT.CN_INT:
+                    s_type = "bigint"
+                elif tag.data.attributes.prsValueTypeCode == TVT.CN_DOUBLE:
+                    s_type = "double precision"
+                elif tag.data.attributes.prsValueTypeCode == TVT.CN_STR:
+                    s_type = "text"
+                elif tag.data.attributes.prsValueTypeCode == TVT.CN_JSON:
+                    s_type = "jsonb"
+                else:
+                    er_str = f"Тег: {tag.id}; неизвестный тип данных: {tag.data.attributes.prsValueTypeCode}"
+                    svc.logger.error(er_str)
+                    raise HTTPException(HEC.CN_500, er_str)
+            # -------------------------------------------------------------------------
+
+                # Запрос на создание таблицы в РСУБД
+                query = (f'CREATE TABLE public."{tbl_name}" ('
+                    '"id" serial primary key,'
+                    '"x" bigint NOT NULL,'
+                    '"y" {s_type},'
+                    '"q" int);'
+                    # Создание индекса на поле "метка времени" ("ts")
+                    'CREATE INDEX "{tbl_name}_idx" ON public."{tbl_name}" '
+                    'USING btree ("x");')
+
+                if tag.data.attributes.prsValueTypeCode == 4:
+                    query += (f'CREATE INDEX "{tbl_name}_json__idx" ON public."{tbl_name}" '
+                                'USING gin ("y" jsonb_path_ops);')
+
+
+                await conn.execute(query)
 
     async def set_data(self, data: Dict):
         # data:
@@ -110,14 +117,21 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
                         q = f"delete from {tag_tbl} where x = {x};"
                     q += f"insert into {tag_tbl} (x, y, q) values ({data_items[0][0], data_items[0][1], data_items[0][2]})"
 
-                    await conn.execute (q)
+                    res = await conn.execute (q)
                 else:
                     if update:
                         xs = [x for x, _, _ in data_items]
-                        q = await conn.prepare(f"delete from {tag_tbl} where x = $1")
-                        await q.executemany(xs)
+                        q = await conn.prepare(f"delete from {tag_tbl} where x in ({','.join(xs)})")
+                        await q.execute(xs)
 
                     q = await conn.prepare(f"insert into {tag_tbl} (x, y, q) values ($1, $2, $3)")
-                    await q.executemany(data_items)
+                    res = await q.executemany(data_items)
+
+            svc.logger.debug(res)
 
         return Response(status_code=204)
+
+    async def _form_tag_cache(self, tag: PrsTagEntry) -> Dict:
+        res = json.loads(tag.data.attributes.prsStore)
+        res['u'] = tag.data.attributes.prsUpdate
+        return res
