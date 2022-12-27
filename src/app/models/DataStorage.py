@@ -24,6 +24,7 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
 
     @root_validator
     @classmethod
+    # этот валидатор должен быть в классах конкретных хранилищ
     def check_config(cls, values):
 
         def uri_validator(x):
