@@ -25,9 +25,9 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         self.dsn = js_config["dsn"]
         self.conn_pool = None
 
-    def __await__(self, **kwargs):
-        super(PrsPostgreSQLEntry, self).__await__()
-        self.conn_pool = apg.create_pool(dsn=self.dsn).__await__()
+    async def _post_init(self):
+        await super(PrsPostgreSQLEntry, self)._post_init()
+        self.conn_pool = await apg.create_pool(dsn=self.dsn)
 
     def _format_data_store(self, tag: PrsTagEntry) -> None | Dict:
         if not tag.data.attributes.prsStore:
