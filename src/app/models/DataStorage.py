@@ -35,9 +35,14 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         config = values.get('prsJsonConfigString')
 
         if not config:
+            '''
             raise ValueError((
                 "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
             ))
+            '''
+            #TODO: методы класса создаются при импорте, поэтому jsonConfigString = None
+            # и возникает ошибка
+            return values
 
         if isinstance(config, str):
             config = json.loads(config)
