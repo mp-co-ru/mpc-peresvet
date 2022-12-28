@@ -11,3 +11,7 @@ services:
     ports:
       - 8002:8000
       - 5678:5678
+
+  ldap:
+    ports:
+      - 389:389

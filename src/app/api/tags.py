@@ -7,7 +7,8 @@ router = APIRouter()
 
 @router.post("/", response_model=ModelNode.PrsResponseCreate, status_code=201)
 async def create(payload = Depends(Tag.PrsTagCreate)):
-    id_ = await main.app.create_tag(payload).get_id()
+    tag = await main.app.create_tag(payload)
+    id_ = tag.get_id()
     return {"id": id_}
 
 @router.get("/{id}/", response_model=Tag.PrsTagCreate)

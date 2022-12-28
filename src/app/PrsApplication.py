@@ -26,8 +26,6 @@ class PrsApplication(FastAPI):
         svc.set_ldap()
         svc.set_ws_pool()
 
-        self._set_data_storages()
-
     def _reg_data_storage_in_cache(self, ds: PrsDataStorageEntry):
         """
         Метод, заносящий в кэш хранилище данных.
@@ -44,6 +42,9 @@ class PrsApplication(FastAPI):
             search_base=svc.config["LDAP_DATASTORAGES_NODE"],
             search_filter='(cn=*)', search_scope=LEVEL, dereference_aliases=DEREF_NEVER,
             attributes=['entryUUID', 'prsEntityTypeCode', 'prsDefault'])
+
+        svc.logger.info(f"datastorages: {res}")
+
         if found:
             for item in res:
                 attrs = dict(item['attributes'])
@@ -93,8 +94,8 @@ class PrsApplication(FastAPI):
             if not payload.attributes.prsDefault:
                 payload.attributes.prsDefault = True
 
-        if payload.attributes.prsEntityTypeCode != CN_DS_T.CN_DS_VICTORIAMETRICS:
-            raise HTTPException(status_code=422, detail="Поддерживается только создание хранилища Victoriametrics (prsEntityTypeCode = 1)")
+        if not payload.attributes.prsEntityTypeCode in CN_DS_T.get_supported():
+            raise HTTPException(status_code=422, detail="Поддерживается создание только зарегистрированных типов хранилищ.")
 
         new_ds = PrsVictoriametricsEntry(data=payload)
         self._reg_data_storage_in_cache(new_ds)
