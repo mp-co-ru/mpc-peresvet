@@ -20,7 +20,7 @@ app.include_router(connectors.router, prefix="/connectors", tags=["connectors"])
 
 @app.on_event("startup")
 async def startup_event():
-    await app._set_data_storages()
+    await app.set_data_storages()
 
 #TODO:
 # 1. вынести код работы с вебсокетом в отдельный файл, сделать по типу строк выше

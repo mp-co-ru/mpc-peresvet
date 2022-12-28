@@ -86,16 +86,20 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
     payload_class = PrsDataStorageCreate
     default_parent_dn: str = svc.config["LDAP_DATASTORAGES_NODE"]
 
+    @classmethod
+    async def create(cls, **kwargs):
+        inst = PrsDataStorageEntry(**kwargs)
+        await inst._post_init()
+        return inst
+
+    async def _post_init(self):
+        await self._read_tags()
+
     def __init__(self, **kwargs):
         super(PrsDataStorageEntry, self).__init__(**kwargs)
 
         self.tags_node = f"cn=tags,{self.dn}"
         self.alerts_node = f"cn=alerts,{self.dn}"
-
-        #self._read_tags()
-
-    def __await__(self, **kwargs):
-        self._read_tags().__await__()
 
     def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
         res = tag.data.attributes.prsStore

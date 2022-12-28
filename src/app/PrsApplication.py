@@ -35,7 +35,7 @@ class PrsApplication(FastAPI):
         if ds.data.attributes.prsDefault:
             svc.default_data_storage_id = ds.id
 
-    async def _set_data_storages(self):
+    async def set_data_storages(self):
         svc.logger.info("Start load datastorages...")
 
         found, _, res, _ = svc.ldap.get_read_conn().search(
@@ -49,14 +49,13 @@ class PrsApplication(FastAPI):
             for item in res:
                 attrs = dict(item['attributes'])
                 ds_uuid = attrs['entryUUID']
-                match attrs['prsEntityTypeCode']:
-                    case CN_DS_T.CN_DS_VICTORIAMETRICS:
-                        new_ds = await PrsVictoriametricsEntry(id=ds_uuid)
-                    case CN_DS_T.CN_DS_POSTGRESQL:
-                        new_ds = await PrsPostgreSQLEntry(id=ds_uuid)
-                    case _:
-                        svc.logger.info("Unsupported type of data storage {ds_uuid}.")
-                        continue
+                if attrs['prsEntityTypeCode'] == CN_DS_T.CN_DS_VICTORIAMETRICS:
+                    new_ds = await PrsVictoriametricsEntry.create(id=ds_uuid)
+                elif attrs['prsEntityTypeCode'] == CN_DS_T.CN_DS_POSTGRESQL:
+                    new_ds = await PrsPostgreSQLEntry.create(id=ds_uuid)
+                else:
+                    svc.logger.info("Unsupported type of data storage {ds_uuid}.")
+                    continue
 
                 self._reg_data_storage_in_cache(new_ds)
 
@@ -85,7 +84,7 @@ class PrsApplication(FastAPI):
 
         return new_tag
 
-    def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
+    async def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
         if payload.attributes.prsDefault:
             for _, item in svc.data_storages.items():
                 item.modify({"prsDefault": False})
@@ -94,18 +93,22 @@ class PrsApplication(FastAPI):
             if not payload.attributes.prsDefault:
                 payload.attributes.prsDefault = True
 
-        if not payload.attributes.prsEntityTypeCode in CN_DS_T.get_supported():
+        if payload.attributes.prsEntityTypeCode == CN_DS_T.CN_DS_VICTORIAMETRICS:
+            new_ds = await PrsVictoriametricsEntry.create(data=payload)
+        elif payload.attributes.prsEntityTypeCode == CN_DS_T.CN_DS_POSTGRESQL:
+            new_ds = await PrsPostgreSQLEntry.create(data=payload)
+        else:
             raise HTTPException(status_code=422, detail="Поддерживается создание только зарегистрированных типов хранилищ.")
 
-        new_ds = PrsVictoriametricsEntry(data=payload)
         self._reg_data_storage_in_cache(new_ds)
 
         svc.logger.info(f"Хранилище данных '{new_ds.data.attributes.cn}'({new_ds.id}) создано.")
 
         return new_ds
 
-    def read_dataStorage(self, id: str) -> PrsDataStorageEntry:
-        return PrsDataStorageEntry(id=id)
+    async def read_dataStorage(self, id: str) -> PrsDataStorageEntry:
+        ds = await PrsDataStorageEntry.create(id=id)
+        return ds
 
     def read_tag(self, id: str) -> PrsTagEntry:
         return PrsTagEntry(id=id)
