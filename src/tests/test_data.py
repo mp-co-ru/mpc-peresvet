@@ -10,12 +10,8 @@ from app.models.data_storages.vm import PrsVictoriametricsEntry
 from app.models.Tag import PrsTagCreate
 
 @pytest.mark.asyncio
-async def test_data_set(test_app, monkeypatch):
-    data = PrsDataStorageCreate()
-    data.attributes.prsDefault = False
-    data.attributes.prsEntityTypeCode = 1
-    data.attributes.prsJsonConfigString = json.dumps({"putUrl": "http://vm:8428/api/put", "getUrl": "http://vm:8428/api/v1/export"})
-    vm = await test_app.app.create_dataStorage(data)
+async def test_data_set(test_app, create_vm_default_datastorage, monkeypatch):
+    vm = await create_vm_default_datastorage
 
     async def mock_set_data(*args):
         assert args[0] == {tag.id: [(0, 0, 0)]}
