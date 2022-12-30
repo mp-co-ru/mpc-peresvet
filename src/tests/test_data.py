@@ -15,7 +15,7 @@ async def test_data_set(test_app, monkeypatch):
     data.attributes.prsDefault = False
     data.attributes.prsEntityTypeCode = 1
     data.attributes.prsJsonConfigString = json.dumps({"putUrl": "http://vm:8428/api/put", "getUrl": "http://vm:8428/api/v1/export"})
-    vm = test_app.app.create_dataStorage(data)
+    vm = await test_app.app.create_dataStorage(data)
 
     async def mock_set_data(*args):
         assert args[0] == {tag.id: [(0, 0, 0)]}
@@ -28,7 +28,7 @@ async def test_data_set(test_app, monkeypatch):
     tag_data = PrsTagCreate()
     tag_data.dataStorageId = vm.id
     tag_data.attributes.cn = "test_tag_1"
-    tag = test_app.app.create_tag(tag_data)
+    tag = await test_app.app.create_tag(tag_data)
 
     data = [{"tagId": tag.id, "data": [{"x": 0, "y": 0, "q": 0}]}]
 
