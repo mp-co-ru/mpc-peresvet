@@ -19,7 +19,7 @@ from app.svc.Services import Services as svc
 def test_dataStorage_create(test_app, payload, status_code, res):
     response = test_app.post("/dataStorages/", data=json.dumps(payload))
     assert response.status_code == status_code
-    
+
 @pytest.mark.asyncio
 async def test_dataStorage_connect():
     data = PrsDataStorageCreate()

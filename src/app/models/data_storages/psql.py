@@ -29,7 +29,15 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         await super(PrsPostgreSQLEntry, self)._post_init()
         self.conn_pool = await apg.create_pool(dsn=self.dsn)
 
-    def _format_data_store(self, tag: PrsTagEntry) -> None | Dict:
+    def _format_tag_cache(self, tag: PrsTagEntry) -> None | str | Dict:
+        # метод возращает данные, которые будут использоваться в качестве
+        # кэша для тэга
+        res = json.loads(tag.data.attributes.prsStore)
+        res["u"] = tag.data.attributes["prsUpdate"]
+        return res
+
+    def _format_tag_data_store(self, tag: PrsTagEntry) -> None | Dict:
+
         if not tag.data.attributes.prsStore:
             return {
                 'table': f"t_{tag.id}"
@@ -44,7 +52,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
             ))
             return
 
-        return tag.data.attributes.prsStore
+        return json.loads(tag.data.attributes.prsStore)
 
     async def connect(self) -> int:
         return 0

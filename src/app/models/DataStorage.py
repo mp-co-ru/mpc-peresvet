@@ -35,30 +35,29 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         config = values.get('prsJsonConfigString')
 
         if not config:
-            '''
             raise ValueError((
                 "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
             ))
-            '''
             #TODO: методы класса создаются при импорте, поэтому jsonConfigString = None
             # и возникает ошибка
-            return values
 
         if isinstance(config, str):
             config = json.loads(config)
 
         if type_code == 1:
-            put_url = config['putUrl']
-            get_url = config['getUrl']
+            put_url = config.get['putUrl']
+            get_url = config.get['getUrl']
+
             if uri_validator(put_url) and uri_validator(get_url):
                 return values
+
             raise ValueError((
                 "Конфигурация (атрибут prsJsonConfigString) для Victoriametrics должна быть вида:\n"
                 "{'putUrl': 'http://<server>:<port>/api/put', 'getUrl': 'http://<server>:<port>/api/v1/export'}"
             ))
         elif type_code == 0:
             dsn = config["dsn"]
-            if urlparse(dsn):
+            if uri_validator(dsn):
                 return values
             raise ValueError((
                 "Конфигурация (атрибут prsJsonConfigString) для PostgreSQL должна быть вида:\n"
@@ -87,8 +86,8 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
     default_parent_dn: str = svc.config["LDAP_DATASTORAGES_NODE"]
 
     @classmethod
-    async def create(cls, **kwargs):
-        inst = PrsDataStorageEntry(**kwargs)
+    async def create(cls, *args, **kwargs):
+        inst = cls(*args, **kwargs)
         await inst._post_init()
         return inst
 
@@ -101,7 +100,14 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         self.tags_node = f"cn=tags,{self.dn}"
         self.alerts_node = f"cn=alerts,{self.dn}"
 
-    def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
+    def _format_tag_cache(self, tag: PrsTagEntry) -> None | str | Dict:
+        # метод возращает данные, которые будут использоваться в качестве
+        # кэша для тэга
+        return json.loads(tag.data.attributes.prsStore)
+
+    def _format_tag_data_store(self, tag: PrsTagEntry) -> None | Dict:
+        # метод возвращает место хранения тэга внутри хранилища
+
         res = tag.data.attributes.prsStore
         if res is not None:
             try:
@@ -124,7 +130,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
         for item in response:
             tag_entry = PrsTagEntry(id=str(item['attributes']['entryUUID']))
-            svc.set_tag_cache(tag_entry, "data_storage", self._format_data_store(tag_entry))
+            svc.set_tag_cache(tag_entry, "data_storage", self._format_tag_cache(tag_entry))
 
         svc.logger.info(f"Тэги, привязанные к хранилищу `{self.data.attributes.cn}`, прочитаны.")
 
@@ -146,14 +152,13 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         data.attributes.cn = 'alerts'
         PrsModelNodeEntry(data=data)
 
-    async def _form_tag_cache(self, tag: PrsTagEntry) -> Dict:
-        return json.loads(tag.data.attributes.prsStore)
-
     async def create_tag_store(self, tag: PrsTagEntry):
         # метод вызывается при создании тега
         pass
 
     async def reg_tags(self, tags: PrsTagEntry | str | List[str] | List[PrsTagEntry]):
+        # метод регистрирует в хранилище новые тэги
+
         if isinstance(tags, (str, PrsTagEntry)):
             tags = [tags]
 
@@ -164,7 +169,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
                 tag_entry = tag
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
 
-            tag_store = self._format_data_store(tag_entry)
+            tag_store = self._format_tag_data_store(tag_entry)
             if (tag_entry.data.attributes.prsStore is None) or (not tag_store == json.loads(tag_entry.data.attributes.prsStore)):
                 tag_entry.modify({
                     "prsStore": json.dumps(tag_store)
@@ -172,5 +177,5 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
             await self.create_tag_store(tag_entry)
 
-            tag_cache = await self._form_tag_cache(tag_entry)
+            tag_cache = self._format_tag_cache(tag_entry)
             svc.set_tag_cache(tag_entry, "data_storage", tag_cache)

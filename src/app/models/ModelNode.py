@@ -109,13 +109,10 @@ class PrsModelNodeEntry:
         # в случае, когда необходимо будет реагировать на
         if id is None:
             conn = svc.ldap.get_write_conn()
-        else:
-            conn = svc.ldap.get_read_conn()
 
-        ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
-        ldap_cls_def += ['entryUUID']
+            ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
+            ldap_cls_def += ['entryUUID']
 
-        if id is None:
             if data.parentId is None:
                 parent_dn = self.__class__.default_parent_dn
             else:
@@ -160,23 +157,33 @@ class PrsModelNodeEntry:
             except Exception as ex:
                 raise HTTPException(status_code=422, detail=f"Некорректный формат id: {id}.") from ex
 
-            self.data = self.__class__.payload_class()
-            status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
-                search_filter=f'(entryUUID={id})', search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
-            if not status:
-                raise HTTPException(status_code=404, detail=f"Сущность с id = {id} отсутствует.")
-            attrs = dict(response[0]['attributes'])
-            self.id = id
+            self._load_node_data(id)
 
-            attrs.pop("objectClass")
+    def _load_node_data(self, id_: str):
 
-            for key, value in attrs.items():
-                if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
-                    value = float(value)
-                self.data.attributes.__setattr__(key, value)
+        conn = svc.ldap.get_read_conn()
+        ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
+        ldap_cls_def += ['entryUUID']
 
-            self.dn = response[0]['dn']
-            self._load_subnodes()
+        self.data = self.__class__.payload_class()
+        status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
+            search_filter=f'(entryUUID={id_})', search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
+        if not status:
+            raise HTTPException(status_code=404, detail=f"Сущность с id = {id} отсутствует.")
+        attrs = dict(response[0]['attributes'])
+        self.id = id_
+
+        attrs.pop("objectClass")
+
+        for key, value in attrs.items():
+            if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
+                value = float(value)
+            self.data.attributes.__setattr__(key, value)
+
+        self.dn = response[0]['dn']
+        self.data.attributes.cn = self.data.attributes.cn[0]
+        self._load_subnodes()
+
 
     def _load_subnodes(self):
         """
@@ -196,3 +203,5 @@ class PrsModelNodeEntry:
         new_attrs = {key: [(MODIFY_REPLACE, value)] for key, value in attrs.items()}
 
         conn.modify(self.dn, new_attrs)
+
+        self._load_node_data(self.id)
