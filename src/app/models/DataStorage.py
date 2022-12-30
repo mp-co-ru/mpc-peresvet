@@ -22,9 +22,10 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         )
     )
 
+    '''
     @root_validator
-    @classmethod
     # этот валидатор должен быть в классах конкретных хранилищ
+    @classmethod
     def check_config(cls, values):
 
         def uri_validator(x):
@@ -67,10 +68,13 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         raise ValueError((
             "Неизвестный тип хранилища данных."
         ))
+        '''
+
+#TODO: Валидацию переносить в класс Prs...Create!!!
 
 class PrsDataStorageCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs()
+    attributes: PrsDataStorageCreateAttrs = None
 
     @validator('parentId', check_fields=False, always=True)
     @classmethod

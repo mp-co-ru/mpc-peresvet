@@ -5,9 +5,53 @@ from typing import Dict, Union
 import aiohttp
 from fastapi import Response
 
-from app.models.DataStorage import PrsDataStorageEntry
+from pydantic import validator, root_validator
+from urllib.parse import urlparse
+
+from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
+
+class PrsVictoriametricsCreate(PrsDataStorageCreate):
+
+    @root_validator
+    # этот валидатор должен быть в классах конкретных хранилищ
+    @classmethod
+    def check_config(cls, values):
+
+        def uri_validator(x):
+            result = urlparse(x)
+            return all([result.scheme, result.netloc])
+
+        attrs = values.get('attributes')
+        if not attrs:
+            raise ValueError((
+                "При создании хранилища необходимо задать атрибуты."
+            ))
+
+        config = attrs.get('prsJsonConfigString')
+
+        if not config:
+            raise ValueError((
+                "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
+            ))
+            #TODO: методы класса создаются при импорте, поэтому jsonConfigString = None
+            # и возникает ошибка
+
+        if isinstance(config, str):
+            config = json.loads(config)
+
+        put_url = config.get['putUrl']
+        get_url = config.get['getUrl']
+
+        if uri_validator(put_url) and uri_validator(get_url):
+            return values
+
+        raise ValueError((
+            "Конфигурация (атрибут prsJsonConfigString) для Victoriametrics должна быть вида:\n"
+            "{'putUrl': 'http://<server>:<port>/api/put', 'getUrl': 'http://<server>:<port>/api/v1/export'}"
+        ))
+
 
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
