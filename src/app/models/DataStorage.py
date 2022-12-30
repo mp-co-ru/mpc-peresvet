@@ -70,7 +70,7 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
 
 class PrsDataStorageCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs(prsEntityTypeCode=CNDataStorageTypes.CN_DS_POSTGRESQL)
+    attributes: PrsDataStorageCreateAttrs = PrsDataStorageCreateAttrs()
 
     @validator('parentId', check_fields=False, always=True)
     @classmethod
