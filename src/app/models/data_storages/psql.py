@@ -83,7 +83,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         # метод возращает данные, которые будут использоваться в качестве
         # кэша для тэга
         res = json.loads(tag.data.attributes.prsStore)
-        res["u"] = tag.data.attributes["prsUpdate"]
+        res["u"] = tag.data.attributes.prsUpdate
         return res
 
     def _format_tag_data_store(self, tag: PrsTagEntry) -> None | Dict:
@@ -110,15 +110,14 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
     async def create_tag_store(self, tag: PrsTagEntry):
 
         async with self.conn_pool.acquire() as conn:
-            tbl_name = tag.data.attributes.prsStore['table']
+            tbl_name = json.loads(tag.data.attributes.prsStore)['table']
 
-            res = await conn.fetchval(
-                (
-                    f"EXISTS ("
-                    f"SELECT FROM information_schema.tables"
+            q = (
+                    f"SELECT EXISTS ("
+                    f"SELECT FROM information_schema.tables "
                     f"WHERE  table_name = '{tbl_name}')"
                 )
-            )
+            res = await conn.fetchval(q)
             if not res:
 
                 if tag.data.attributes.prsValueTypeCode == TVT.CN_INT:
@@ -137,13 +136,13 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
                 # Запрос на создание таблицы в РСУБД
                 query = (f'CREATE TABLE public."{tbl_name}" ('
-                    '"id" serial primary key,'
-                    '"x" bigint NOT NULL,'
-                    '"y" {s_type},'
-                    '"q" int);'
+                    f'"id" serial primary key,'
+                    f'"x" bigint NOT NULL,'
+                    f'"y" {s_type},'
+                    f'"q" int);'
                     # Создание индекса на поле "метка времени" ("ts")
-                    'CREATE INDEX "{tbl_name}_idx" ON public."{tbl_name}" '
-                    'USING btree ("x");')
+                    f'CREATE INDEX "{tbl_name}_idx" ON public."{tbl_name}" '
+                    f'USING btree ("x");')
 
                 if tag.data.attributes.prsValueTypeCode == 4:
                     query += (f'CREATE INDEX "{tbl_name}_json__idx" ON public."{tbl_name}" '
@@ -172,8 +171,9 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
                     q = ""
                     if update:
                         x, _, _ = data_items[0]
-                        q = f"delete from {tag_tbl} where x = {x};"
-                    q += f"insert into {tag_tbl} (x, y, q) values ({data_items[0][0], data_items[0][1], data_items[0][2]})"
+                        q = f'delete from "{tag_tbl}" where x = {x}; '
+                    n = "NULL"
+                    q += f'insert into "{tag_tbl}" (x, y, q) values ({data_items[0][0]}, {(n, data_items[0][1])[bool(data_items[0][1])]}, {(n, data_items[0][2])[bool(data_items[0][2])]})'
 
                     res = await conn.execute (q)
                 else:

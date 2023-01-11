@@ -1,13 +1,17 @@
 from uuid import uuid4, UUID
+import json
+from typing import List, Optional, Union, Dict
 
 from fastapi import HTTPException
-from ldap3 import ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
+from ldap3 import (ObjectDef, Reader, Writer, SUBTREE, BASE,
+    DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
+)
+from ldap3.core.exceptions import LDAPCursorError
 from pydantic import BaseModel, validator, Field
-from typing import List, Optional, Union, Dict
-import json
 
 import app.main as main
 from app.svc.Services import Services as svc
+from app.const import CNHTTPExceptionCodes as HEC
 
 class PrsModelNodeCreateAttrs(BaseModel):
     """Pydantic BaseModel for prsBaseModel attributes
@@ -132,7 +136,13 @@ class PrsModelNodeEntry:
             else:
                 cn = data.attributes.cn[0]
 
-            entry = writer.new(f'cn={cn},{parent_dn}')
+            try:
+                entry = writer.new(f'cn={cn},{parent_dn}')
+            except LDAPCursorException as ex:
+                s_er = f"Ошибка создания узла '{cn}': {ex}"
+                svc.logger.error(s_er)
+                raise HTTPException(HEC.CN_422, detail=s_er) from ex
+
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
                     if isinstance(value, dict):
