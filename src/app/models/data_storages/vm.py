@@ -12,6 +12,7 @@ from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
 
+'''
 class PrsVictoriametricsCreate(PrsDataStorageCreate):
 
     @root_validator
@@ -51,7 +52,7 @@ class PrsVictoriametricsCreate(PrsDataStorageCreate):
             "Конфигурация (атрибут prsJsonConfigString) для Victoriametrics должна быть вида:\n"
             "{'putUrl': 'http://<server>:<port>/api/put', 'getUrl': 'http://<server>:<port>/api/v1/export'}"
         ))
-
+'''
 
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
