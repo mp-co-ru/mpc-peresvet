@@ -12,6 +12,7 @@ from app.models.Data import PrsData
 from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
 import app.times as times
 from app.const import CNDataStorageTypes as CN_DS_T
+from app.const import CNHTTPExceptionCodes as HEC
 
 class PrsApplication(FastAPI):
 
@@ -61,14 +62,14 @@ class PrsApplication(FastAPI):
 
         if svc.data_storages:
             if svc.default_data_storage_id is None:
-                svc.default_data_storage_id = svc.data_storages.keys()[0]
+                svc.default_data_storage_id = list(svc.data_storages.keys())[0]
 
         svc.logger.info("Хранилища данных загружены.")
 
     async def create_tag(self, payload: PrsTagCreate) -> PrsTagEntry:
         if not svc.data_storages:
             svc.logger.info("Невозможно создать тэг без зарегистрированных хранилищ данных.")
-            raise HTTPException(status_code=424, detail="Перед созданием тэга необходимо зарегистрировать хотя бы одно хранилище данных.")
+            raise HTTPException(HEC.CN_424, detail="Перед созданием тэга необходимо зарегистрировать хотя бы одно хранилище данных.")
 
         if payload.dataStorageId is None:
             payload.dataStorageId = svc.default_data_storage_id
@@ -85,10 +86,14 @@ class PrsApplication(FastAPI):
         return new_tag
 
     async def create_dataStorage(self, payload: PrsDataStorageCreate) -> PrsDataStorageEntry:
+        # если вновь создаваемое хранилище - хранилище по умолчанию,
+        # то предыдущее хранилище по умолчанию нужно сделать обычным
         if payload.attributes.prsDefault:
-            for _, item in svc.data_storages.items():
-                item.modify({"prsDefault": False})
+            if svc.default_data_storage_id:
+                svc.data_storages[svc.default_data_storage_id].modify({"prsDefault": False})
 
+        # если хранилищ ещё нет, то первое создаваемое будет
+        # хранилищем по умолчанию в любом случае
         if not svc.data_storages:
             if not payload.attributes.prsDefault:
                 payload.attributes.prsDefault = True
@@ -98,7 +103,7 @@ class PrsApplication(FastAPI):
         elif payload.attributes.prsEntityTypeCode == CN_DS_T.CN_DS_POSTGRESQL:
             new_ds = await PrsPostgreSQLEntry.create(data=payload)
         else:
-            raise HTTPException(status_code=422, detail="Поддерживается создание только зарегистрированных типов хранилищ.")
+            raise HTTPException(HEC.CN_422, detail="Поддерживается создание только зарегистрированных типов хранилищ.")
 
         self._reg_data_storage_in_cache(new_ds)
 

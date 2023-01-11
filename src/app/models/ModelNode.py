@@ -65,8 +65,10 @@ class PrsModelNodeCreateAttrs(BaseModel):
 
 class PrsModelNodeCreate(BaseModel):
     """Class for http requests validation"""
-    parentId: str = None # uuid of parent node
-    attributes: PrsModelNodeCreateAttrs = PrsModelNodeCreateAttrs()
+    parentId: str = Field(None, title='id родительского узла') # uuid of parent node
+    attributes: PrsModelNodeCreateAttrs = Field(PrsModelNodeCreateAttrs(), title=(
+        'Атрибуты узла.'
+    ))
 
     @classmethod
     @validator('parentId', check_fields=False)
@@ -103,7 +105,9 @@ class PrsModelNodeEntry:
     def _add_subnodes(self) -> None:
         pass
 
-    def __init__(self, data: PrsModelNodeCreate = None, id: str = None):
+    def __init__(self,
+        data = PrsModelNodeCreate(attributes=PrsModelNodeCreateAttrs()),
+        id: str = None):
         # сохраняем коннект на время создания/чтения узла, в конце конструктора - освобождаем
         # делаем так, чтобы не плодить активных коннектов
         # в случае, когда необходимо будет реагировать на
@@ -165,7 +169,6 @@ class PrsModelNodeEntry:
         ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
         ldap_cls_def += ['entryUUID']
 
-        self.data = self.__class__.payload_class()
         status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
             search_filter=f'(entryUUID={id_})', search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
         if not status:
@@ -177,11 +180,14 @@ class PrsModelNodeEntry:
 
         for key, value in attrs.items():
             if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
-                value = float(value)
-            self.data.attributes.__setattr__(key, value)
+                attrs[key] = float(value)
+            #self.data.attributes.__setattr__(key, value)
+        attrs['cn'] = attrs['cn'][0]
+
+        self.data = self.__class__.payload_class(attributes=attrs)
 
         self.dn = response[0]['dn']
-        self.data.attributes.cn = self.data.attributes.cn[0]
+        #self.data.attributes.cn = self.data.attributes.cn[0]
         self._load_subnodes()
 
 

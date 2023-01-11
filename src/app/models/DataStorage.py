@@ -22,7 +22,20 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         )
     )
 
-    '''
+    prsDefault: bool = Field(False, title='Флаг хранилища данных по умолчанию',
+        description=(
+            'Каждое вновь добавляемое хранилище данных становится '
+            'хранилищем по умолчанию. '
+        )
+    )
+
+    prsJsonConfigString: Dict | str | None = Field({
+            "dsn": "postgres://postgres:postgres@localhost:5432/postgres"
+        }, title="Строка с json-конфигурацией.",
+        description=(
+            'Атрибут может содержать строку с json-конфигурацией для сущности. Подробней - в документации на каждую сущность.'
+        ))
+
     @root_validator
     # этот валидатор должен быть в классах конкретных хранилищ
     @classmethod
@@ -37,7 +50,7 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
 
         if not config:
             raise ValueError((
-                "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
+                "Должна присутствовать конфигурация хранилища данных (атрибут prsJsonConfigString)."
             ))
             #TODO: методы класса создаются при импорте, поэтому jsonConfigString = None
             # и возникает ошибка
@@ -46,8 +59,8 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
             config = json.loads(config)
 
         if type_code == 1:
-            put_url = config.get['putUrl']
-            get_url = config.get['getUrl']
+            put_url = config.get('putUrl')
+            get_url = config.get('getUrl')
 
             if uri_validator(put_url) and uri_validator(get_url):
                 return values
@@ -68,13 +81,16 @@ class PrsDataStorageCreateAttrs(PrsModelNodeCreateAttrs):
         raise ValueError((
             "Неизвестный тип хранилища данных."
         ))
-        '''
 
 #TODO: Валидацию переносить в класс Prs...Create!!!
 
 class PrsDataStorageCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
-    attributes: PrsDataStorageCreateAttrs = None
+    attributes: PrsDataStorageCreateAttrs = Field(PrsDataStorageCreateAttrs(),
+        title=(
+            'Атрибуты хранилища данных'
+        )
+    )
 
     @validator('parentId', check_fields=False, always=True)
     @classmethod
@@ -148,9 +164,10 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
         pass
 
     def _add_subnodes(self) -> None:
-        data = PrsModelNodeCreate()
+        data = PrsModelNodeCreate(attributes={
+            "cn": "tags"
+        })
         data.parentId = self.id
-        data.attributes = PrsModelNodeCreateAttrs(cn='tags')
         PrsModelNodeEntry(data=data)
 
         data.attributes.cn = 'alerts'

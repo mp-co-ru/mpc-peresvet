@@ -36,5 +36,6 @@ async def create_vm_default_datastorage(test_app):
 @pytest.mark.asyncio
 async def create_tag(test_app, create_vm_default_datastorage):
     #await create_vm_default_datastorage
-    new_tag = await test_app.app.create_tag(PrsTagCreate())
+    data = PrsTagCreate(attributes={})
+    new_tag = await test_app.app.create_tag(data)
     return new_tag

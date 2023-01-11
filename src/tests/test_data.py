@@ -7,7 +7,7 @@ from app.models.DataStorage import PrsDataStorageCreate
 from app.models.Data import PrsData
 from app.svc.Services import Services as svc
 from app.models.data_storages.vm import PrsVictoriametricsEntry
-from app.models.Tag import PrsTagCreate
+from app.models.Tag import PrsTagCreate, PrsTagCreateAttrs
 
 @pytest.mark.asyncio
 async def test_data_set(test_app, create_vm_default_datastorage, monkeypatch):
@@ -21,9 +21,9 @@ async def test_data_set(test_app, create_vm_default_datastorage, monkeypatch):
 
     # [{"data": [{"tagId": "test_tag_1", "data": [{"x": 0, "y": 0, "q": 0}]}]}, {"test_tag_1": [(0, 0, 0)]}]
 
-    tag_data = PrsTagCreate()
-    tag_data.dataStorageId = vm.id
-    tag_data.attributes.cn = "test_tag_1"
+    tag_data = PrsTagCreate(dataStorageId=vm.id, attributes={
+        "cn": "test_tag_1"
+    })
     tag = await test_app.app.create_tag(tag_data)
 
     data = [{"tagId": tag.id, "data": [{"x": 0, "y": 0, "q": 0}]}]

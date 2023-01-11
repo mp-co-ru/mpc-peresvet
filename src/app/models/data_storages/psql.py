@@ -2,14 +2,58 @@ import json
 import copy
 from typing import Dict
 
+from urllib.parse import urlparse
 from fastapi import HTTPException, Response
 
 import asyncpg as apg
 
-from app.models.DataStorage import PrsDataStorageEntry
+from pydantic import validator, root_validator
+
+from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
 from app.const import CNHTTPExceptionCodes as HEC, CNTagValueTypes as TVT
+
+'''
+class PrsPostgreSQLCreate(PrsDataStorageCreate):
+
+    @root_validator
+    # этот валидатор должен быть в классах конкретных хранилищ
+    @classmethod
+    def check_config(cls, values):
+
+        def uri_validator(x):
+            result = urlparse(x)
+            return all([result.scheme, result.netloc])
+
+        attrs = values.get('attributes')
+        if not attrs:
+            raise ValueError((
+                "При создании хранилища необходимо задать атрибуты."
+            ))
+
+        config = attrs.get('prsJsonConfigString')
+
+        if not config:
+            raise ValueError((
+                "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
+            ))
+            #TODO: методы класса создаются при импорте, поэтому jsonConfigString = None
+            # и возникает ошибка
+
+        try:
+            if isinstance(config, str):
+                config = json.loads(config)
+
+            dsn = config["dsn"]
+            if uri_validator(dsn):
+                return values
+        except Exception as ex:
+            raise ValueError((
+                "Конфигурация (атрибут prsJsonConfigString) для PostgreSQL должна быть вида:\n"
+                "{'dsn': 'postgres://<user>:<password>@<host>:<port>/<database>?<option>=<value>'"
+            )) from ex
+'''
 
 class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
@@ -26,8 +70,14 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         self.conn_pool = None
 
     async def _post_init(self):
+        try:
+            self.conn_pool = await apg.create_pool(dsn=self.dsn)
+        except OSError as ex:
+            er_str = f"Ошибка связи с базой данных '{self.dsn}': {ex}"
+            svc.logger.error(er_str)
+            raise HTTPException(HEC.CN_503, er_str) from ex
+
         await super(PrsPostgreSQLEntry, self)._post_init()
-        self.conn_pool = await apg.create_pool(dsn=self.dsn)
 
     def _format_tag_cache(self, tag: PrsTagEntry) -> None | str | Dict:
         # метод возращает данные, которые будут использоваться в качестве
@@ -59,7 +109,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
     async def create_tag_store(self, tag: PrsTagEntry):
 
-        with self.conn_pool.acquire() as conn:
+        async with self.conn_pool.acquire() as conn:
             tbl_name = tag.data.attributes.prsStore['table']
 
             res = await conn.fetchval(
@@ -82,7 +132,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
                 else:
                     er_str = f"Тег: {tag.id}; неизвестный тип данных: {tag.data.attributes.prsValueTypeCode}"
                     svc.logger.error(er_str)
-                    raise HTTPException(HEC.CN_500, er_str)
+                    raise HTTPException(HEC.CN_422, er_str)
             # -------------------------------------------------------------------------
 
                 # Запрос на создание таблицы в РСУБД

@@ -11,6 +11,6 @@ async def create(payload = Depends(Tag.PrsTagCreate)):
     id_ = tag.get_id()
     return {"id": id_}
 
-@router.get("/{id}/", response_model=Tag.PrsTagCreate)
+@router.get("/{id_}/", response_model=Tag.PrsTagCreate)
 async def read_tag(id_: str):
     return main.app.read_tag(id_).data
