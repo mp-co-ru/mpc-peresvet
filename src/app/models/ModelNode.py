@@ -1,13 +1,17 @@
 from uuid import uuid4, UUID
+import json
+from typing import List, Optional, Union, Dict
 
 from fastapi import HTTPException
-from ldap3 import ObjectDef, Reader, Writer, SUBTREE, BASE, DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
+from ldap3 import (ObjectDef, Reader, Writer, SUBTREE, BASE,
+    DEREF_NEVER, ALL_ATTRIBUTES, MODIFY_REPLACE
+)
+from ldap3.core.exceptions import LDAPCursorError
 from pydantic import BaseModel, validator, Field
-from typing import List, Optional, Union, Dict
-import json
 
 import app.main as main
 from app.svc.Services import Services as svc
+from app.const import CNHTTPExceptionCodes as HEC
 
 class PrsModelNodeCreateAttrs(BaseModel):
     """Pydantic BaseModel for prsBaseModel attributes
@@ -65,8 +69,10 @@ class PrsModelNodeCreateAttrs(BaseModel):
 
 class PrsModelNodeCreate(BaseModel):
     """Class for http requests validation"""
-    parentId: str = None # uuid of parent node
-    attributes: PrsModelNodeCreateAttrs = PrsModelNodeCreateAttrs()
+    parentId: str = Field(None, title='id родительского узла') # uuid of parent node
+    attributes: PrsModelNodeCreateAttrs = Field(PrsModelNodeCreateAttrs(), title=(
+        'Атрибуты узла.'
+    ))
 
     @classmethod
     @validator('parentId', check_fields=False)
@@ -74,8 +80,8 @@ class PrsModelNodeCreate(BaseModel):
         if v is not None:
             try:
                 UUID(v)
-            except:
-                raise ValueError('parentId must be uuid')
+            except Exception as ex:
+                raise ValueError('parentId must be uuid') from ex
         return v
 
 class PrsResponseCreate(BaseModel):
@@ -90,7 +96,7 @@ class PrsModelNodeEntry:
 
     objectClass (str) - имя класса в схеме ldap
     default_parent_dn (str) - имя родительского узла в иерархии по умолчанию
-    payload_class (class) - класс, используемых в запросах создания/получения данных
+    payload_class (class) - класс используемых в запросах создания/получения данных
 
     _add_subnodes - добавление дочерних узлов
     _add_fields_to_get_response - добавление к стандартному ответу, отдаваемому клиенту при его запросе get дополнительных атрибутов.
@@ -103,19 +109,18 @@ class PrsModelNodeEntry:
     def _add_subnodes(self) -> None:
         pass
 
-    def __init__(self, data: PrsModelNodeCreate = None, id: str = None):
+    def __init__(self,
+        data = PrsModelNodeCreate(attributes=PrsModelNodeCreateAttrs()),
+        id: str = None):
         # сохраняем коннект на время создания/чтения узла, в конце конструктора - освобождаем
         # делаем так, чтобы не плодить активных коннектов
         # в случае, когда необходимо будет реагировать на
         if id is None:
             conn = svc.ldap.get_write_conn()
-        else:
-            conn = svc.ldap.get_read_conn()
 
-        ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
-        ldap_cls_def += ['entryUUID']
+            ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
+            ldap_cls_def += ['entryUUID']
 
-        if id is None:
             if data.parentId is None:
                 parent_dn = self.__class__.default_parent_dn
             else:
@@ -131,7 +136,13 @@ class PrsModelNodeEntry:
             else:
                 cn = data.attributes.cn[0]
 
-            entry = writer.new(f'cn={cn},{parent_dn}')
+            try:
+                entry = writer.new(f'cn={cn},{parent_dn}')
+            except LDAPCursorException as ex:
+                s_er = f"Ошибка создания узла '{cn}': {ex}"
+                svc.logger.error(s_er)
+                raise HTTPException(HEC.CN_422, detail=s_er) from ex
+
             for key, value in data.attributes.__dict__.items():
                 if value is not None:
                     if isinstance(value, dict):
@@ -157,26 +168,38 @@ class PrsModelNodeEntry:
         else:
             try:
                 UUID(id)
-            except:
-                raise HTTPException(status_code=422, detail=f"Некорректный формат id: {id}.")
+            except Exception as ex:
+                raise HTTPException(status_code=422, detail=f"Некорректный формат id: {id}.") from ex
 
-            self.data = self.__class__.payload_class()
-            status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
-                search_filter=f'(entryUUID={id})', search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
-            if not status:
-                raise HTTPException(status_code=404, detail=f"Сущность с id = {id} отсутствует.")
-            attrs = dict(response[0]['attributes'])
-            self.id = id
+            self._load_node_data(id)
 
-            attrs.pop("objectClass")
+    def _load_node_data(self, id_: str):
 
-            for key, value in attrs.items():
-                if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
-                    value = float(value)
-                self.data.attributes.__setattr__(key, value)
+        conn = svc.ldap.get_read_conn()
+        ldap_cls_def = ObjectDef(self.__class__.objectClass, conn)
+        ldap_cls_def += ['entryUUID']
 
-            self.dn = response[0]['dn']
-            self._load_subnodes()
+        status, _, response, _ = conn.search(search_base=svc.config["LDAP_BASE_NODE"],
+            search_filter=f'(entryUUID={id_})', search_scope=SUBTREE, dereference_aliases=DEREF_NEVER, attributes=[ALL_ATTRIBUTES])
+        if not status:
+            raise HTTPException(status_code=404, detail=f"Сущность с id = {id} отсутствует.")
+        attrs = dict(response[0]['attributes'])
+        self.id = id_
+
+        attrs.pop("objectClass")
+
+        for key, value in attrs.items():
+            if ldap_cls_def[key].oid_info.syntax == '1.3.6.1.4.1.1466.115.121.1.36':
+                attrs[key] = float(value)
+            #self.data.attributes.__setattr__(key, value)
+        attrs['cn'] = attrs['cn'][0]
+
+        self.data = self.__class__.payload_class(attributes=attrs)
+
+        self.dn = response[0]['dn']
+        #self.data.attributes.cn = self.data.attributes.cn[0]
+        self._load_subnodes()
+
 
     def _load_subnodes(self):
         """
@@ -196,3 +219,5 @@ class PrsModelNodeEntry:
         new_attrs = {key: [(MODIFY_REPLACE, value)] for key, value in attrs.items()}
 
         conn.modify(self.dn, new_attrs)
+
+        self._load_node_data(self.id)

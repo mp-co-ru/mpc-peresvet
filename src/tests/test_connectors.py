@@ -1,7 +1,9 @@
-import pytest
 import uuid
-from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
+import pytest
+
 from fastapi import HTTPException
+from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
+
 
 def test_connector_create():
     data = PrsConnectorCreate()

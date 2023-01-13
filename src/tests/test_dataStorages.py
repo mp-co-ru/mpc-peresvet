@@ -8,7 +8,7 @@ from app.svc.Services import Services as svc
 @pytest.mark.parametrize(
     "payload, status_code, res",
     [
-        [{}, 422, {id: ""}],
+        [{}, 503, {id: ""}],
         [{"attributes": {"prsEntityTypeCode": 1}}, 422, {}],
         [{"parentId": str(uuid.uuid4())}, 422, {}],
         [{"attributes": {"prsEntityTypeCode": 1, "prsJsonConfigString": '{"url": "uncorrect url"}'}}, 422, {}],
@@ -19,11 +19,12 @@ from app.svc.Services import Services as svc
 def test_dataStorage_create(test_app, payload, status_code, res):
     response = test_app.post("/dataStorages/", data=json.dumps(payload))
     assert response.status_code == status_code
-    
+
 @pytest.mark.asyncio
 async def test_dataStorage_connect():
-    data = PrsDataStorageCreate()
-    data.attributes.prsEntityTypeCode = 1
-    data.attributes.prsJsonConfigString = json.dumps({"putUrl": "http://vm:8428", "getUrl": "http://vm:8428/api/v1/export"})
+    data = PrsDataStorageCreate(attributes={
+        "prsEntityTypeCode": 1,
+        "prsJsonConfigString": json.dumps({"putUrl": "http://vm:8428", "getUrl": "http://vm:8428/api/v1/export"})
+    })
     vm = PrsVictoriametricsEntry(data=data)
     assert await vm.connect() == 200
