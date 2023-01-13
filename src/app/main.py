@@ -18,6 +18,10 @@ app.include_router(dataStorages.router, prefix="/dataStorages", tags=["dataStora
 app.include_router(data.router, prefix="/data", tags=["data"])
 app.include_router(connectors.router, prefix="/connectors", tags=["connectors"])
 
+@app.on_event("startup")
+async def startup_event():
+    await app.set_data_storages()
+
 #TODO:
 # 1. вынести код работы с вебсокетом в отдельный файл, сделать по типу строк выше
 # 2. разобраться с таймаутами пинг-понга. параметры в командной строке при запуске приложения не работают!

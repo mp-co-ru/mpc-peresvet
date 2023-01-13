@@ -77,7 +77,7 @@
 
 Запуск отладки:
 1. Создаем в VSCode новый терминал: `Terminal -> New terminal` (`Терминал -> Создать терминал`).
-2. В терминале выполняем команду: ```$ docker-compose -f docker-compose.peresvet.yml -f docker-compose.debug.yml up```
+2. В терминале выполняем команду: ```$ docker compose -f docker-compose.peresvet.yml -f docker-compose.debug.yml up```
 3. Нажимаем `F5`...
 4. Мы вошли в режим отладки приложения.
 

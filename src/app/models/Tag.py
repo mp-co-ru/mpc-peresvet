@@ -80,7 +80,7 @@ class PrsTagCreate(PrsModelNodeCreate):
     """Request /tags/ POST"""
     connectorId: str = Field(None, title='Id коннектора, являющегося поставщиком данных для тэга.', description='По умолчанию отсутствует.')
     dataStorageId: str = Field(None, title='Id хранилища данных.', description='В случае отсутствия берётся хранилище по умолчанию.')
-    attributes: PrsTagCreateAttrs = PrsTagCreateAttrs()
+    attributes: PrsTagCreateAttrs = Field(PrsTagCreateAttrs(), title='Атрибуты тега')
 
 class PrsTagEntry(PrsModelNodeEntry):
     payload_class = PrsTagCreate
@@ -90,9 +90,10 @@ class PrsTagEntry(PrsModelNodeEntry):
     def _add_subnodes(self) -> None:
         super()._add_subnodes()
 
-        system_node = PrsModelNodeCreate()
-        system_node.attributes.cn = 'system'
-        system_node.parentId = self.id
+        attrs = {
+            "cn": "system"
+        }
+        system_node = PrsModelNodeCreate(parentId=self.id, attributes=attrs)
         node_entry = PrsModelNodeEntry(data=system_node)
         if self.data.dataStorageId is not None:
             svc.ldap.add_alias(node_entry.dn, svc.data_storages[self.data.dataStorageId].dn, "dataStorage")

@@ -1,19 +1,64 @@
-import aiohttp
 import json
 import copy
 from typing import Dict, Union
+
+import aiohttp
 from fastapi import Response
 
-from app.models.DataStorage import PrsDataStorageEntry
+from pydantic import validator, root_validator
+from urllib.parse import urlparse
+
+from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
+
+'''
+class PrsVictoriametricsCreate(PrsDataStorageCreate):
+
+    @root_validator
+    # этот валидатор должен быть в классах конкретных хранилищ
+    @classmethod
+    def check_config(cls, values):
+
+        def uri_validator(x):
+            result = urlparse(x)
+            return all([result.scheme, result.netloc])
+
+        attrs = values.get('attributes')
+        if not attrs:
+            raise ValueError((
+                "При создании хранилища необходимо задать атрибуты."
+            ))
+
+        config = attrs.get('prsJsonConfigString')
+
+        if not config:
+            raise ValueError((
+                "Должна присутствовать конфигурация (атрибут prsJsonConfigString)."
+            ))
+            #TODO: методы класса создаются при импорте, поэтому jsonConfigString = None
+            # и возникает ошибка
+
+        if isinstance(config, str):
+            config = json.loads(config)
+
+        put_url = config.get['putUrl']
+        get_url = config.get['getUrl']
+
+        if uri_validator(put_url) and uri_validator(get_url):
+            return values
+
+        raise ValueError((
+            "Конфигурация (атрибут prsJsonConfigString) для Victoriametrics должна быть вида:\n"
+            "{'putUrl': 'http://<server>:<port>/api/put', 'getUrl': 'http://<server>:<port>/api/v1/export'}"
+        ))
+'''
 
 class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
     def __init__(self, **kwargs):
         super(PrsVictoriametricsEntry, self).__init__(**kwargs)
 
-        self.tag_cache = {}
         if isinstance(self.data.attributes.prsJsonConfigString, dict):
             js_config = self.data.attributes.prsJsonConfigString
         else:
@@ -24,7 +69,7 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
         #self.session = None
         self.session = aiohttp.ClientSession()
 
-    def _format_data_store(self, tag: PrsTagEntry) -> Union[None, Dict]:
+    def _format_tag_data_store(self, tag: PrsTagEntry) -> None | Dict:
         if tag.data.attributes.prsStore:
             data_store = json.loads(tag.data.attributes.prsStore)
         else:
@@ -34,14 +79,14 @@ class PrsVictoriametricsEntry(PrsDataStorageEntry):
 
             # имя метрики не может начинаться с цифр и не может содержать дефисов
             if tag.id == data_store['metric']:
-                data_store['metric'] = "t_{}".format(data_store['metric'].replace('-', '_'))
+                data_store['metric'] = f"t_{data_store['metric'].replace('-', '_')}"
 
         return data_store
 
     async def connect(self) -> int:
         #if self.session is None:
         #    self.session = aiohttp.ClientSession()
-        async with self.session.get("{}{}".format(self.get_url, "?match[]=vm_free_disk_space_bytes")) as response:
+        async with self.session.get(f"{self.get_url}?match[]=vm_free_disk_space_bytes") as response:
             return response.status
 
     async def set_data(self, data):

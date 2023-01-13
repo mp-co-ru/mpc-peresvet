@@ -16,6 +16,8 @@ validators = "*"
 aiohttp = {version = "*", extras = ["speedups"]}
 python-dateutil = "*"
 websockets = "*"
+asyncpg="*"
+
 
 [requires]
 python_version = "3.10"
