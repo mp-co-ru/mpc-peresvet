@@ -17,6 +17,7 @@ aiohttp = {version = "*", extras = ["speedups"]}
 python-dateutil = "*"
 websockets = "*"
 asyncpg="*"
+ciso8601="*"
 
 
 [requires]

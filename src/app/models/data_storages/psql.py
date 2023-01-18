@@ -188,8 +188,3 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
             svc.logger.debug(res)
 
         return Response(status_code=204)
-
-    async def _form_tag_cache(self, tag: PrsTagEntry) -> Dict:
-        res = json.loads(tag.data.attributes.prsStore)
-        res['u'] = tag.data.attributes.prsUpdate
-        return res
