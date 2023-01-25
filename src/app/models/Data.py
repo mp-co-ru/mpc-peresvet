@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Any
 from pydantic import BaseModel, Field, validator
 
 import app.times as t
@@ -81,6 +81,13 @@ class PrsReqGetData(BaseModel):
             "реально записанные в хранилище значения."
         )
     )
+
+    value: Any = Field(None, title="Значение для поиска",
+        description="Фильтр по значению")
+
+    count: int = Field(None, title="Количество возвращаемых значений")
+
+    timeStep: int = Field(None, title="Период между соседними возвращаемыми значениями")
 
     @classmethod
     @validator('tagId')
