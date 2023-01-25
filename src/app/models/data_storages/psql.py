@@ -1,6 +1,7 @@
 import json
 import copy
 from typing import Dict
+import asyncio
 
 from urllib.parse import urlparse
 from fastapi import HTTPException, Response
@@ -10,6 +11,7 @@ import asyncpg as apg
 from pydantic import validator, root_validator
 
 from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
+from app.models.Data import PrsReqGetData
 from app.models.Tag import PrsTagEntry
 from app.svc.Services import Services as svc
 from app.const import CNHTTPExceptionCodes as HEC, CNTagValueTypes as TVT
@@ -82,9 +84,12 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
     def _format_tag_cache(self, tag: PrsTagEntry) -> None | str | Dict:
         # метод возращает данные, которые будут использоваться в качестве
         # кэша для тэга
-        res = json.loads(tag.data.attributes.prsStore)
-        res["u"] = tag.data.attributes.prsUpdate
-        return res
+        #res = json.loads(tag.data.attributes.prsStore)
+        #res["u"] = tag.data.attributes.prsUpdate
+        return {
+            "attrs": tag.data.attributes.copy(deep=True),
+            "table": json.loads(tag.data.attributes.prsStore)['table']
+        }
 
     def _format_tag_data_store(self, tag: PrsTagEntry) -> None | Dict:
 
@@ -151,7 +156,25 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
                 await conn.execute(query)
 
-    async def set_data(self, data: Dict):
+    async def data_get(self, data: PrsReqGetData) -> Response:
+
+        '''
+        services: Services = SmtApplication.service()
+        model = services.model
+        data_storages = services.data_storages
+
+        if isinstance(tag, str):
+            tag_id = tag
+            tag = await model.tags.tags_get_one(tag_id)
+            if tag.get('error'):
+                return DatagetResponse(tag_id, [], False, tag['error'])
+        else:
+            tag_id = tag.get('id')
+        '''
+
+
+
+    async def data_set(self, data: Dict):
         # data:
         # {
         #        "<tag_id>": [(x, y, q)]
@@ -162,7 +185,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
             for tag_id in data.keys():
                 tag_cache = svc.get_tag_cache(tag_id, "data_storage")
                 tag_tbl = tag_cache["table"]
-                update = tag_cache["u"]
+                update = tag_cache["attrs"].prsUpdate
                 data_items = data[tag_id]
 
                 # для одного значения нет смысла тратить время

@@ -10,7 +10,7 @@ from app.models.Tag import PrsTagEntry, PrsTagCreate
 from app.models.DataStorage import PrsDataStorageEntry, PrsDataStorageCreate
 from app.models.data_storages.vm import PrsVictoriametricsEntry
 from app.models.data_storages.psql import PrsPostgreSQLEntry
-from app.models.Data import PrsReqGetData, PrsRespGetData, PrsReqSetData
+from app.models.Data import PrsReqGetData, PrsReqSetData
 from app.models.Connector import PrsConnectorCreate, PrsConnectorEntry
 import app.times as times
 from app.const import CNDataStorageTypes as CN_DS_T
@@ -158,7 +158,7 @@ class PrsApplication(FastAPI):
             data_storages[data_storage_id].tagId.append(tag_id)
 
         tasks = [await asyncio.create_task(
-            svc.data_storages[key].get_data(value) for key, value in data_storages.items()
+            svc.data_storages[key].data_get(value) for key, value in data_storages.items()
         )]
         done, _ = await asyncio.wait(tasks)
         res = {
@@ -167,7 +167,7 @@ class PrsApplication(FastAPI):
         status = 200
         for task in done:
             value = task.result()
-            res["data"].extend(value.body["data"])
+            res["data"].extend(value["data"])
             if value.status_code >= 400:
                 status = value.status_code
 
