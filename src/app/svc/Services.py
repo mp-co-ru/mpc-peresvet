@@ -1,4 +1,5 @@
 import os
+import copy
 from logging import Logger
 from typing import Dict, Any, List
 from ldap3 import LEVEL, DEREF_NEVER
@@ -78,7 +79,7 @@ class Services:
     @classmethod
     def get_tag_cache(cls, tag_id: str, key: str) -> Any:
         if cls.tags.get(tag_id) is not None:
-            return cls.tags[tag_id].get(key)
+            return copy.deepcopy(cls.tags[tag_id].get(key))
         else:
             return None
 

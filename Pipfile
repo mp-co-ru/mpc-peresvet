@@ -18,6 +18,8 @@ python-dateutil = "*"
 websockets = "*"
 asyncpg="*"
 ciso8601="*"
+pandas="*"
+numpy="*"
 
 
 [requires]
