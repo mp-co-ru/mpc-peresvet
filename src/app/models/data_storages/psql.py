@@ -12,6 +12,7 @@ import numpy as np
 import numbers
 
 import asyncpg as apg
+from asyncpg.exceptions import PostgresError
 
 from pydantic import validator, root_validator
 
@@ -47,7 +48,13 @@ def linear_interpolated(start_point: Tuple[int, Any],
     if not isinstance(y0, numbers.Number) or not isinstance(y1, numbers.Number):
         return y0
 
-    return pd.Series([y0, None, y1], index=[x0, x, x1]).interpolate(method='index')[x]
+    if y0 == y1:
+        return y0
+
+    if x0 == x1:
+        return y0
+
+    return (x-x0)/(x1-x0)*(y1-y0)+y0
 
 '''
 class PrsPostgreSQLCreate(PrsDataStorageCreate):
@@ -147,7 +154,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
     async def create_tag_store(self, tag: PrsTagEntry):
 
         async with self.conn_pool.acquire() as conn:
-            tbl_name = json.loads(tag.data.attributes.prsStore)['table']
+            tbl_name = tag.data.attributes.prsStore['table']
 
             q = (
                     f"SELECT EXISTS ("
@@ -192,7 +199,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
         tasks = {}
         tag_types = {}
-        for tag_id in data["tagId"]:
+        for tag_id in data.tagId:
             tag_cache = svc.get_tag_cache(tag_id, "data_storage")
             if not tag_cache:
                 svc.logger.error(f'Тег {tag_id} отсутствует.')
@@ -227,7 +234,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
                         )
                     )
 
-            elif data.finish is None and data.count is None and (data.value is None or len(data.value) == 0):
+            elif data.start is None and data.count is None and (data.value is None or len(data.value) == 0):
                 tasks[tag_id] = asyncio.create_task(
                         self._data_get_one(
                             tag_table, data.finish, tag_step
@@ -246,8 +253,8 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         await asyncio.wait(list(tasks.values()))
 
         result = {"data": []}
-        for tag_id in list(tasks.values()):
-            tag_data = tasks[tag_id].result()
+        for tag_id, task in tasks.items():
+            tag_data = task.result()
 
             if not data.actual and (data.value is not None and len(data.value) > 0):
                 tag_data = self._filter_data(tag_data, data.value, tag_types[tag_id]['type'], tag_types[tag_id]['step'])
@@ -256,7 +263,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
             excess = False
             if data.maxCount is not None:
-                excess = len(tag_data) > max_count
+                excess = len(tag_data) > data.max_count
 
                 if excess:
                     if data.maxCount == 0:
@@ -273,12 +280,13 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
             if data.format:
                 svc.format_data(tag_data, data.format)
 
-            result["data"][tag_id] = {
+            new_item = {
                 "tagId": tag_id,
                 "data": tag_data
             }
             if data.maxCount:
-                result["data"][tag_id]["excess"] = excess
+                new_item["excess"] = excess
+            result["data"].append(new_item)
 
         return result
 
@@ -443,7 +451,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         """
         tag_data = await self._read_data(
             table=table, start=None, finish=finish, count=1,
-            one_after=not tag_step, order=Order.DESC
+            one_before=False, one_after=not tag_step, order=Order.CN_DESC
         )
 
         if not tag_data:
@@ -483,7 +491,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         """ Получение значения на текущую метку времени
         """
         tag_data = await self._read_data(
-            table, start, finish, (Order.DESC if count is not None and start is None else Order.ASC),
+            table, start, finish, (Order.CN_DESC if count is not None and start is None else Order.CN_ASC),
             count, True, True, None
         )
         if not tag_data:
@@ -534,7 +542,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
             # (xn_1; yn_1) - запись перед значением `to`
             try:
-                xn_1, yn_1 = HistoricalData._last_point(tag_data[-2]['x'], tag_data)
+                xn_1, yn_1 = self._last_point(tag_data[-2]['x'], tag_data)
             except IndexError:
                 xn_1 = -1
                 yn_1 = None
@@ -614,7 +622,7 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
 
         #table = self._validate_container(table)
         conditions = ['TRUE']
-        sql_select = f'SELECT id, x, y, q FROM {table}'
+        sql_select = f'SELECT id, x, y, q FROM "{table}"'
 
         if start is not None:
             conditions.append(f'x >= {start}')
@@ -628,13 +636,13 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
             queries.append(f'({sql_select} WHERE x < {start} {value_filter} ORDER BY x DESC, id DESC LIMIT 1)')
 
         limit_str = ('', f'LIMIT {count}')[isinstance(count, int)]
-        order = ('ASC', 'DESC')[order == Order.DESC]
+        order = ('ASC', 'DESC')[order == Order.CN_DESC]
         conditions = ' AND '.join(conditions)
 
-        queries.append(f'({sql_select} WHERE {conditions} {value_filter} ORDER BY ts {order}, id DESC {limit_str})')
+        queries.append(f'({sql_select} WHERE {conditions} {value_filter} ORDER BY x {order}, id DESC {limit_str})')
 
         if one_after and finish:
-            queries.append(f'({sql_select} WHERE ts > {finish} {value_filter} ORDER BY ts ASC, id DESC LIMIT 1)')
+            queries.append(f'({sql_select} WHERE x > {finish} {value_filter} ORDER BY x ASC, id DESC LIMIT 1)')
 
         subquery = ' UNION '.join(queries)
         query_args = [f'SELECT x, y, q FROM ({subquery}) as sub ORDER BY sub.x ASC, id ASC']
@@ -655,33 +663,67 @@ class PrsPostgreSQLEntry(PrsDataStorageEntry):
         # }
         #
 
-        async with self.conn_pool.acquire() as conn:
-            for tag_id in data.keys():
-                tag_cache = svc.get_tag_cache(tag_id, "data_storage")
-                tag_tbl = tag_cache["table"]
-                update = tag_cache["attrs"].prsUpdate
-                data_items = data[tag_id]
+        null = "NULL"
 
-                # для одного значения нет смысла тратить время
-                # на PreparedStatement
-                if len(data_items) <= 1:
-                    q = ""
-                    if update:
-                        x, _, _ = data_items[0]
-                        q = f'delete from "{tag_tbl}" where x = {x}; '
-                    n = "NULL"
-                    q += f'insert into "{tag_tbl}" (x, y, q) values ({data_items[0][0]}, {(n, data_items[0][1])[bool(data_items[0][1])]}, {(n, data_items[0][2])[bool(data_items[0][2])]})'
+        q = ""
+        for tag_id in data.keys():
+            tag_cache = svc.get_tag_cache(tag_id, "data_storage")
+            tag_tbl = tag_cache["attrs"].prsStore["table"]
+            tag_value_type = tag_cache["attrs"].prsValueTypeCode
+            update = tag_cache["attrs"].prsUpdate
+            data_items = data[tag_id]
 
+            if update:
+                xs = [str(x) for x, _, _ in data_items]
+                q += f'delete from "{tag_tbl}" where x in ({",".join(xs)}); '
+
+            for item in data_items:
+                if tag_value_type in [1, 2]:
+                    y = (null, item[1])[bool(item[1])]
+                elif tag_value_type == 3:
+                    y = (null, f"'{item[1]}'")[bool(item[1])]
+                elif tag_value_type == 4:
+                    y = (null, f"'{json.dumps(item[1])}'")[bool(item[1])]
+                q += f'insert into "{tag_tbl}" (x, y, q) values ({item[0]}, {y}, {(null, item[2])[bool(item[2])]});'
+
+        try:
+            async with self.conn_pool.acquire() as conn:
+                async with conn.transaction(isolation='read_committed'):
                     res = await conn.execute (q)
-                else:
-                    if update:
-                        xs = [x for x, _, _ in data_items]
-                        q = await conn.prepare(f"delete from {tag_tbl} where x in ({','.join(xs)})")
-                        await q.execute(xs)
+        except PostgresError as ex:
+            svc.logger.debug(ex)
+            raise HTTPException (HEC.CN_500, detail=str(ex)) from ex
 
-                    q = await conn.prepare(f"insert into {tag_tbl} (x, y, q) values ($1, $2, $3)")
-                    res = await q.executemany(data_items)
-
-            svc.logger.debug(res)
+        svc.logger.debug(res)
 
         return Response(status_code=204)
+
+    def _limit_data(self,
+                    tag_data: List[Dict],
+                    count: int,
+                    start: int,
+                    finish: int):
+        """ Ограничение количества записей в выборке.
+        Если задан параметр ``since``, возвращается ``limit`` первых записей списка.
+        Если ``since`` не задан (None), но задан ``till``, возвращается
+        ``limit`` последних записей списка
+
+        :param tag_data: исходная выборка, массив словарей {'x': int, 'y': Any, 'q': int}
+        :type tag_data: List[Dict]
+
+        :param limit: количество записей в выборке
+        :type limit: int
+
+        :param since: нижняя граница выборки
+        :type since: int
+
+        :param till: верхняя граница выборки
+        :type till: int
+        """
+        if not count:
+            return tag_data
+        if start:
+            return tag_data[:count]
+        if finish:
+            return tag_data[-count:]
+        return tag_data

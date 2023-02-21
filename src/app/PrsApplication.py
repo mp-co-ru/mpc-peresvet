@@ -139,7 +139,7 @@ class PrsApplication(FastAPI):
 
         return res[0]['dn'] if found else None
 
-    async def data_get(self, data: PrsReqGetData) -> Response:
+    async def data_get(self, data: PrsReqGetData) -> dict:
         """
         Метод создаёт копии запроса для каждого хранилища данных,
         при этом в каждой копии сохраняются только те тэги, которые привязаны
@@ -155,24 +155,21 @@ class PrsApplication(FastAPI):
             if data_storages.get(data_storage_id) is None:
                 data_storages[data_storage_id] = deepcopy(data)
                 data_storages[data_storage_id].tagId = [tag_id]
-            data_storages[data_storage_id].tagId.append(tag_id)
+            else:
+                data_storages[data_storage_id].tagId.append(tag_id)
 
-        tasks = [await asyncio.create_task(
-            svc.data_storages[key].data_get(value) for key, value in data_storages.items()
-        )]
+        tasks = [asyncio.create_task(
+            svc.data_storages[key].data_get(value)) for key, value in data_storages.items()
+        ]
         done, _ = await asyncio.wait(tasks)
         res = {
             "data": []
         }
-        status = 200
         for task in done:
             value = task.result()
             res["data"].extend(value["data"])
-            if value.status_code >= 400:
-                status = value.status_code
 
-        return Response(status_code=status, content=res)
-
+        return res
 
     async def data_set(self, data: PrsReqSetData) -> Response:
         """
@@ -201,9 +198,9 @@ class PrsApplication(FastAPI):
                     x = times.ts(data_item.x)
                 data_storages[data_storage_id][tag_item.tagId].append((x, data_item.y, data_item.q))
 
-        tasks = [await asyncio.create_task(
-            svc.data_storages[key].set_data(value) for key, value in data_storages.items()
-        )]
+        tasks = [asyncio.create_task(
+            svc.data_storages[key].data_set(value)) for key, value in data_storages.items()
+        ]
         done, _ = await asyncio.wait(tasks)
         #TODO: подумать, как возвращать результат
         for task in done:

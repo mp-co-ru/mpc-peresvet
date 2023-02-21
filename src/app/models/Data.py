@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import List, Any, Union
 from pydantic import BaseModel, Field, validator
 
 import app.times as t
@@ -13,7 +13,7 @@ class PrsDataItem(BaseModel):
             "либо строкой в формате ISO8601."
        )
     )
-    y: int | float | dict | str = Field(None, title="Значение тега")
+    y: float | int | dict | str = Field(None, title="Значение тега")
     q: int = Field(None, title="Код качества")
 
 class PrsTagSetData(BaseModel):
@@ -45,12 +45,15 @@ class PrsReqGetData(BaseModel):
             "либо строкой в формате ISO8601."
        )
     )
+
     finish: int | str = Field(None, title="Конец периода",
         description=(
             "Может быть либо целым числом, в этом случае это микросекунды, "
             "либо строкой в формате ISO8601."
        )
     )
+
+    #finish: int | str = None
     maxCount: int = Field(None, title="Максимальное количество точек",
         description=(
             "Максимальное количество точек, возвращаемых для одного тега. "
@@ -89,8 +92,7 @@ class PrsReqGetData(BaseModel):
 
     timeStep: int = Field(None, title="Период между соседними возвращаемыми значениями")
 
-    @classmethod
-    @validator('tagId')
+    @validator('tagId', always=True)
     def tagId_must_exists(cls, v):
         if v is None:
             raise ValueError("Должен присутствовать ключ 'tagId'")
@@ -98,19 +100,16 @@ class PrsReqGetData(BaseModel):
             return [v]
         return v
 
-    @classmethod
-    @validator('finish')
+    # always=True, because if finish is None it is set to current time
+    @validator('finish', always=True)
     def finish_set_to_int(cls, v):
         return t.ts(v)
 
-    @classmethod
+    # if start is None, validator will not be called
     @validator('start')
     def convert_start(cls, v):
-        if v is None:
-            return v
         return t.ts(v)
 
-    @classmethod
     @validator('maxCount')
     def maxCount_not_zero(cls, v):
         if v is None:

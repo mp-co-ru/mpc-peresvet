@@ -61,6 +61,7 @@ class Services:
 
     @classmethod
     def set_ldap(cls):
+        cls.logger.debug(f'LDAP. host: {os.getenv("LDAP_HOST")}, port: {int(os.getenv("LDAP_PORT"))}, user: {os.getenv("LDAP_USER")}, pwd: {os.getenv("LDAP_PASSWORD")}')
         cls.ldap = ld.PrsLDAP(os.getenv("LDAP_HOST"), int(os.getenv("LDAP_PORT")), os.getenv("LDAP_USER"), os.getenv("LDAP_PASSWORD"))
 
     @classmethod

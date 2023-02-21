@@ -154,6 +154,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
 
         for item in response:
             tag_entry = PrsTagEntry(id=str(item['attributes']['entryUUID']))
+
             svc.set_tag_cache(tag_entry, "data_storage", self._format_tag_cache(tag_entry))
 
         svc.logger.info(f"Тэги, привязанные к хранилищу `{self.data.attributes.cn}`, прочитаны.")
@@ -195,7 +196,7 @@ class PrsDataStorageEntry(PrsModelNodeEntry):
             svc.ldap.add_alias(parent_dn=self.tags_node, aliased_dn=tag_entry.dn, name=tag_entry.id)
 
             tag_store = self._format_tag_data_store(tag_entry)
-            if (tag_entry.data.attributes.prsStore is None) or (not tag_store == json.loads(tag_entry.data.attributes.prsStore)):
+            if (tag_entry.data.attributes.prsStore is None) or (not tag_store == tag_entry.data.attributes.prsStore):
                 tag_entry.modify({
                     "prsStore": json.dumps(tag_store)
                 })
