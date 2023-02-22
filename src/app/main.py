@@ -100,7 +100,8 @@ async def websocket_endpoint(websocket: WebSocket, api: str):
                 for command, data_body in received_data.items():
                     # TODO: проверить формирование нужных классов из данных
                     if command == "post":
-                        await app.data_set(data=PrsReqSetData(**data_body))
+                        res = await app.data_set(data=PrsReqSetData(**data_body))
+                        await websocket.send_json({"status_code": res.status_code})
                     elif command == "get":
                         res = await app.data_get(data=PrsReqGetData(**data_body))
                         await websocket.send_json(res)
