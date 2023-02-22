@@ -96,12 +96,13 @@ class GetUser(User):
 
                     t1 = t.time()
                     await websocket.send(body)
-                    res = await websocket.recv()
+                    await websocket.recv()
                     t2 = t.time()
                     full_time += t2 - t1
+                    ''''
                     if json.loads(res)["status_code"] != 204:
                         status = 204
-
+                    '''
                     if (frequency / 1000) > (t2 - t1):
                         await asyncio.sleep((frequency / 1000) - t2 - t1)
 
@@ -117,10 +118,11 @@ async def main():
 
     connectors = [SetUser(ids['1'], ids['2'], ids['3'], ids['4']) for _ in range(CN_CONNECTORS)]
     screens = [GetUser(ids['1'], ids['2'], ids['3'], ids['4']) for _ in range(CN_SCREENS)]
-
+    '''
     tasks = [asyncio.create_task(
         connectors[k].as_connector(CN_TAGS_IN_CONNECTOR, CN_CONNECTOR_FREQUENCY)
     ) for k in range(len(connectors))]
+
     tasks.extend(
         [
             asyncio.create_task(
@@ -128,7 +130,10 @@ async def main():
             ) for k in range(len(screens))
         ]
     )
-
+    '''
+    tasks = [asyncio.create_task(
+        screens[k].as_screen(10, 10, 2, 4, 1000)
+    ) for k in range(len(screens))]
     await asyncio.wait(tasks)
 
 asyncio.run(main())
