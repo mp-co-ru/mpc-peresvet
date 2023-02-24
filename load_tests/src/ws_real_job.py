@@ -96,15 +96,15 @@ class GetUser(User):
 
                     t1 = t.time()
                     await websocket.send(body)
-                    await websocket.recv()
+                    res = await websocket.recv()
                     t2 = t.time()
                     full_time += t2 - t1
-                    ''''
-                    if json.loads(res)["status_code"] != 204:
-                        status = 204
-                    '''
+                    if not json.loads(res).get("data"):
+                        status = 400
+
                     if (frequency / 1000) > (t2 - t1):
                         await asyncio.sleep((frequency / 1000) - t2 - t1)
+                    print(".", end="")
 
                 print(f"Screen time: {full_time / CN_CYCLE_COUNT}; status: {status}")
 
