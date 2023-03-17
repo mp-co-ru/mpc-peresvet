@@ -61,12 +61,12 @@ async def main():
 
     count_for_each_type = 50
 
-    with open("./tags_in_postgres.json") as f:
+    with open("./src/tags_in_postgres.json") as f:
         ids = json.load(f)
 
         for type_code, tags in ids.items():
 
-            if type_code in ['4']:
+            if type_code in ['1', '2', '3']:
                 continue
 
             current_count = 0

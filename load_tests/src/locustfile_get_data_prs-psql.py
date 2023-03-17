@@ -4,7 +4,7 @@ import string
 
 from locust import HttpUser, TaskSet, task, between, events
 
-from websocket import create_connection
+# from websocket import create_connection
 import time
 
 from uuid import uuid4

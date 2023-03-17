@@ -5,7 +5,7 @@ import time
 
 async def main():
 
-    with open("./tags_in_postgres.json") as f:
+    with open("./src/tags_in_postgres.json") as f:
         ids = json.load(f)
 
     try:

@@ -1,3 +1,9 @@
 FROM locustio/locust
 
-RUN pip3 install locust_plugins ciso8601
+USER root
+RUN apt-get update
+RUN apt-get --assume-yes install gcc
+RUN pip install --upgrade pip
+RUN pip3 install wheel
+RUN pip3 install python-dateutil
+RUN pip3 install ciso8601

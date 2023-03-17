@@ -8,7 +8,7 @@ async def main():
     conn = await apg.connect(user='postgres', password='Peresvet21',
                                  database='peresvet', host='127.0.0.1')
 
-    with open("./tags_in_postgres.json") as f:
+    with open("./src/tags_in_postgres.json") as f:
         ids = json.load(f)
 
 

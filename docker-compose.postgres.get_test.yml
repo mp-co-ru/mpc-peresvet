@@ -8,8 +8,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       TZ: ${TIME_ZONE}
-      PGDATA: "/var/lib/postgresql/data/pgdata"
+      PGDATA: '/var/lib/postgresql/data/pgdata'
+      # command: postgres -c config_file=/var/lib/postgresql/data/pgdata/postgresql.conf
     ports:
       - 5432:5432
     volumes:
-      - /home/vovaman/psql_get_test:/var/lib/postgresql/data
+      - /Volumes/Zago/mpc_peresvet/psql_get_test:/var/lib/postgresql/data
+      - './config/psql/postgresql.conf:/var/lib/postgresql/data/pgdata/postgresql.conf'
