@@ -1,0 +1,35 @@
+{
+  "metric": ["Ia", "Io", "Ab", "Tc", "Rc", "Ut"],
+  "tags": [
+    {
+      "workshop": "Main",
+      "area": "Area_1",
+      "machine": "AC_CLASSIC_V2_13"
+    },
+    {
+      "workshop": "Main",
+      "area": "Area_2",
+      "machine": "AC_CLASSIC_V2_13"
+    },
+    {
+      "workshop": "Main",
+      "area": "Area_3",
+      "machine": "AC_CLASSIC_V2_13"
+    },
+    {
+      "workshop": "Main",
+      "area": "Area_4",
+      "machine": "AC_CLASSIC_V2_13"
+    },
+    {
+      "workshop": "Main",
+      "area": "Area_5",
+      "machine": "AC_CLASSIC_V2_13"
+    },
+    {
+      "workshop": "Main",
+      "area": "Area_6",
+      "machine": "AC_CLASSIC_V2_13"
+    }
+  ]
+}

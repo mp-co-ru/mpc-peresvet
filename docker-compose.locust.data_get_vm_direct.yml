@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  locust_master:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.locust
+    ports:
+      - '8089:8089'
+    volumes:
+      - ./load_tests/src/:/mnt/locust/
+    command: -f /mnt/locust/locustfile_get_data_vm_direct.py --master -H http://locust_master:8089
+
+  locust_worker:
+    build:
+      context: .
+      dockerfile: Docker/Dockerfile.locust
+    volumes:
+      - ./load_tests/src/:/mnt/locust/
+    command: -f /mnt/locust/locustfile_get_data_vm_direct.py --worker --master-host locust_master

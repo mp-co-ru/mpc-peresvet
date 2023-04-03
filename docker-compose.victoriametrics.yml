@@ -8,7 +8,7 @@ services:
     ports:
       - 8428:8428
       - 4242:4242
-    #volumes:
-    #  - ./vm-data:/victoria-metrics-data
+    volumes:
+      - /Users/alexey/Documents/victoriametrics_set_test:/victoria-metrics-data
     environment:
       TZ: ${TIME_ZONE}
