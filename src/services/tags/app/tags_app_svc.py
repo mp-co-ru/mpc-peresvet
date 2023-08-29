@@ -33,6 +33,7 @@ class TagsApp(svc.Svc):
         }
 
     async def _data_get(self, mes: dict) -> dict:
+        """
         self._logger.debug(f"Data get mes: {mes}")
 
         new_payload = copy.deepcopy(mes["data"])
@@ -56,8 +57,15 @@ class TagsApp(svc.Svc):
                 routing_key=tag_id
             )
             final_res["data"] += res["data"]
+        """
+        mes["action"] = "tags.downloadData"
+        res = await self._post_message(mes,
+            reply=True,
+            routing_key="ac258e2a-b8f7-103d-9a07-6fcde61b9a51"
+        )
+        #final_res["data"] += res["data"]
 
-        return final_res
+        return res
 
     async def _data_set(self, mes: dict) -> None:
 

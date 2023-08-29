@@ -748,124 +748,65 @@ class DataStoragesAppPostgreSQL(svc.Svc):
             _type_: _description_
         """
 
+        # Исходим из предположения, что пакет состоит из тегов для одной базы!!!
+
         self._logger.debug(f"mes: {mes}")
 
-        tasks = {}
-        for tag_id in mes["data"]["tagId"]:
-            tag_params = self._tags.get(tag_id)
-            if not tag_params:
-                self._logger.error(
-                    f"Тег {tag_id} не привязан к хранилищу."
+        mes_data = mes["data"]
+        if mes_data["start"] is None and \
+            mes_data["count"] is None and \
+            (mes_data["value"] is None or len(mes_data["value"]) == 0):
+            self._logger.debug(f"Create task 'data_get_one")
+            t1 = time.time()
+            res = await self._data_get_one(mes_data["tagId"], mes_data["finish"])
+            print(f"Time: {time.time() - t1}")
+            return res
+
+        '''
+        # Если ключ actual установлен в true, ключ timeStep не учитывается
+        if mes["data"]["actual"] or (mes["data"]["value"] is not None \
+            and len(mes["data"]["value"]) > 0):
+            mes["data"]["timeStep"] = None
+
+        if mes["data"]["actual"]:
+            self._logger.debug(f"Create task 'data_get_actual")
+            tasks[tag_id]= asyncio.create_task(
+                    self._data_get_actual(
+                        tag_params,
+                        mes["data"]["start"],
+                        mes["data"]["finish"],
+                        mes["data"]["count"],
+                        mes["data"]["value"]
+                    )
                 )
-                continue
 
-            # Если ключ actual установлен в true, ключ timeStep не учитывается
-            if mes["data"]["actual"] or (mes["data"]["value"] is not None \
-               and len(mes["data"]["value"]) > 0):
-                mes["data"]["timeStep"] = None
-
-            if mes["data"]["actual"]:
-                self._logger.debug(f"Create task 'data_get_actual")
-                tasks[tag_id]= asyncio.create_task(
-                        self._data_get_actual(
-                            tag_params,
-                            mes["data"]["start"],
-                            mes["data"]["finish"],
-                            mes["data"]["count"],
-                            mes["data"]["value"]
-                        )
+        elif mes["data"]["timeStep"] is not None:
+            self._logger.debug(f"Create task 'data_get_interpolated")
+            tasks[tag_id]= asyncio.create_task(
+                    self._data_get_interpolated(
+                        tag_params,
+                        mes["data"]["start"], mes["data"]["finish"],
+                        mes["data"]["count"], mes["data"]["timeStep"]
                     )
+                )
 
-            elif mes["data"]["timeStep"] is not None:
-                self._logger.debug(f"Create task 'data_get_interpolated")
-                tasks[tag_id]= asyncio.create_task(
-                        self._data_get_interpolated(
-                            tag_params,
-                            mes["data"]["start"], mes["data"]["finish"],
-                            mes["data"]["count"], mes["data"]["timeStep"]
-                        )
-                    )
-
-            elif mes["data"]["start"] is None and \
-                mes["data"]["count"] is None and \
-                (mes["data"]["value"] is None or len(mes["data"]["value"]) == 0):
-                self._logger.debug(f"Create task 'data_get_one")
-                tasks[tag_id] = asyncio.create_task(
-                        self._data_get_one(
-                            tag_params,
-                            mes["data"]["finish"]
-                        )
-                    )
-
-            else:
-                # Множество значений
-                self._logger.debug(f"Create task 'data_get_many")
-
-                tasks[tag_id]= asyncio.create_task(
-                        self._data_get_many(
-                            tag_params,
-                            mes["data"]["start"],
-                            mes["data"]["finish"],
-                            mes["data"]["count"]
-                        )
-                    )
-
-        result = {"data": []}
-
-        if tasks:
-            await asyncio.wait(list(tasks.values()))
         else:
-            self._logger.debug(f"No data to return")
-            return result
+            # Множество значений
+            self._logger.debug(f"Create task 'data_get_many")
 
-        for tag_id, task in tasks.items():
-            tag_data = task.result()
-
-            if not mes["data"]["actual"] and \
-                (
-                    mes["data"]["value"] is not None and \
-                    len(mes["data"]["value"]) > 0
-                ):
-                tag_data = self._filter_data(
-                    tag_data,
-                    mes["data"]["value"],
-                    self._tags[tag_id]['value_type'],
-                    self._tags[tag_id]['step']
+            tasks[tag_id]= asyncio.create_task(
+                    self._data_get_many(
+                        tag_params,
+                        mes["data"]["start"],
+                        mes["data"]["finish"],
+                        mes["data"]["count"]
+                    )
                 )
-                if mes["data"]["from_"] is None:
-                    tag_data = [tag_data[-1]]
 
-            excess = False
-            if mes["data"]["maxCount"] is not None:
-                excess = len(tag_data) > mes["data"]["maxCount"]
+        '''
 
-                if excess:
-                    if mes["data"]["maxCount"] == 0:
-                        tag_data = []
-                    elif mes["data"]["maxCount"] == 1:
-                        tag_data = tag_data[:1]
-                    elif mes["data"]["maxCount"] == 2:
-                        tag_data = [tag_data[0], tag_data[-1]]
-                    else:
-                        new_tag_data = tag_data[:mes["data"]["maxCount"] - 1]
-                        new_tag_data.append(tag_data[-1])
-                        tag_data = new_tag_data
 
-            '''
-            if mes["data"]["format"]:
-                svc.format_data(tag_data, data.format)
-            '''
-            new_item = {
-                "tagId": tag_id,
-                "data": tag_data
-            }
-            if mes["data"]["maxCount"]:
-                new_item["excess"] = excess
-            result["data"].append(new_item)
 
-        self._logger.debug(f"Data get result: {result}")
-
-        return result
 
     def _filter_data(
             self, tag_data: List[tuple], value: List[Any], tag_type_code: int,
@@ -1052,9 +993,64 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         return (x, list(filter(lambda rec: rec[1] == x, data))[-1][0])
 
     async def _data_get_one(self,
-                            tag_cache: dict,
-                            finish: int) -> List[dict]:
+                            tags: list[str],
+                            finish: int) -> list[dict]:
         """ Получение значения на текущую метку времени
+        """
+        q = ""
+        tag_params = None
+        queries = []
+        for tag_id in tags:
+            tag_params = self._tags.get(tag_id)
+            if tag_params is None:
+                self._logger.error(f"Тег {tag_id} не привязан к хранилищу.")
+                continue
+            table = tag_params["table"]
+            queries.append(
+                f"(select '{tag_id}' as tagId, x, y, q from \"{table}\" where x <= {finish} order by id desc limit 1) "
+                f"union (select '{tag_id}' as tagId, x, y, q from \"{table}\" where x >= {finish} order by id limit 1) "
+            )
+
+        queries = [" union ".join(queries) + " order by tagId, x;"]
+
+        tags = {}
+        data = {
+            "data": []
+        }
+        async with tag_params["ds"].acquire() as conn:
+            async with conn.transaction():
+                prev_tag_id = None
+                async for r in conn.cursor(*queries):
+                    tag_id = r.get("tagId")
+                    if prev_tag_id:
+                        if tag_id != prev_tag_id:
+                            data["data"].append(
+                                {
+                                    "tagId": tag_id,
+                                    "data": [tags["tagId"]]
+                                }
+                            )
+                            prev_tag_id = None
+                            continue
+
+                    point = (r.get('y'), r.get('x'), r.get('q'))
+                    if first_point := tags.get("tagId"):
+                        data["data"].append(
+                            {
+                                "tagId": tag_id,
+                                "data": [
+                                    (
+                                        linear_interpolated(
+                                            (first_point[1], first_point[0]), (point[1], point[0]), finish
+                                        ), finish, point[2]
+                                    )
+                                ]
+                            }
+                        )
+                    else:
+                        tags["tagId"] = point
+        return data
+
         """
         tag_data = await self._read_data(
             tag_cache=tag_cache, start=None, finish=finish, count=1,
@@ -1089,6 +1085,7 @@ class DataStoragesAppPostgreSQL(svc.Svc):
             tag_data[0] = (tag_data[0][0], finish, tag_data[0][2])
 
         return tag_data
+        """
 
     async def _data_get_many(self,
                              tag_cache: dict,
