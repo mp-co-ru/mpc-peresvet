@@ -730,7 +730,7 @@ class DataStoragesAppPostgreSQL(svc.Svc):
 
         Args:
             mes (dict): {
-                "action": "tags.get_data",
+                "action": "tags.downloadData",
                 "data": {
                     "tagId": [str],
                     "start": int,
@@ -757,9 +757,9 @@ class DataStoragesAppPostgreSQL(svc.Svc):
             mes_data["count"] is None and \
             (mes_data["value"] is None or len(mes_data["value"]) == 0):
             self._logger.debug(f"Create task 'data_get_one")
-            t1 = time.time()
+            #t1 = time.time()
             res = await self._data_get_one(mes_data["tagId"], mes_data["finish"])
-            print(f"Time: {time.time() - t1}")
+            #print(f"Time: {time.time() - t1}")
             return res
 
         '''
@@ -999,6 +999,7 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         """
         q = ""
         tag_params = None
+        #print(f"tags: {tags}")
         queries = []
         for tag_id in tags:
             tag_params = self._tags.get(tag_id)

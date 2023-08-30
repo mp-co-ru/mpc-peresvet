@@ -151,16 +151,26 @@ class TagsAppAPI(svc.Svc):
         }
 
     async def data_get(self, payload: DataGet) -> dict:
+        print(f"DataGet: {payload}")
         if isinstance(payload, dict):
             payload = payload["data"]
             payload = DataGet(**payload)
 
+        '''
         body = {
             "action": "tags.getData",
             "data": payload.model_dump()
         }
         res = await self._post_message(
             mes=body, reply=True,
+        )
+        '''
+        body = {
+            "action": "tags.downloadData",
+            "data": payload.model_dump()
+        }
+        res = await self._post_message(
+            mes=body, reply=True, routing_key="ac258e2a-b8f7-103d-9a07-6fcde61b9a51"
         )
 
         if payload.format:
