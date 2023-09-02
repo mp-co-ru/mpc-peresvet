@@ -658,6 +658,7 @@ class DataStoragesAppPostgreSQL(svc.Svc):
                 self._logger.debug(f"Сохранение кэша тега.")
                 tag_cache["ds"] = self._connection_pools[ds[0]]
                 tag_cache["ds_id"] = ds[0]
+                tag_cache["current_value"] = None
                 self._tags[tag_id] = tag_cache
 
                 self._data_cache[ds[0]][tag_id] = []
@@ -753,6 +754,22 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         self._logger.debug(f"mes: {mes}")
 
         mes_data = mes["data"]
+
+        if mes_data.get("finish") is None and mes_data.get("start") is None:
+            now_time = t.now_int()
+            res = {
+                "data": []
+            }
+            for tag_id in mes_data["tagId"]:
+                tag_item = {
+                    "tagId": tag_id,
+                    "data": [
+                        (self._tags[tag_id]["current_value"], now_time, None)
+                    ]
+                }
+                res["data"].append(tag_item)
+            return res
+
         if mes_data["start"] is None and \
             mes_data["count"] is None and \
             (mes_data["value"] is None or len(mes_data["value"]) == 0):
@@ -811,9 +828,6 @@ class DataStoragesAppPostgreSQL(svc.Svc):
                 )
 
         '''
-
-
-
 
     def _filter_data(
             self, tag_data: List[tuple], value: List[Any], tag_type_code: int,

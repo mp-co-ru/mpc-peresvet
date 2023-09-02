@@ -61,7 +61,8 @@ class DataGet(BaseModel):
         title="Метка времени начала периода."
     )
     finish: int | str = Field(
-        default_factory=t.now_int,
+        #default_factory=t.now_int,
+        None,
         title="Метка времени окончания периода."
     )
     maxCount: int = Field(
