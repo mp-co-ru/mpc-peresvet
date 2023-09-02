@@ -762,6 +762,13 @@ class DataStoragesAppPostgreSQL(svc.Svc):
             #print(f"Time: {time.time() - t1}")
             return res
 
+        return await self._data_get_many(
+                        mes_data["tagId"],
+                        mes["data"]["start"],
+                        mes["data"]["finish"],
+                        mes["data"]["count"]
+                    )
+
         '''
         # Если ключ actual установлен в true, ключ timeStep не учитывается
         if mes["data"]["actual"] or (mes["data"]["value"] is not None \
@@ -1089,88 +1096,64 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         """
 
     async def _data_get_many(self,
-                             tag_cache: dict,
+                             tag_ids: list[str],
                              start: int,
                              finish: int,
                              count: int = None) -> List[dict]:
-        """ Получение значения на текущую метку времени
+        """ Получение значений на период
         """
-        tag_data = await self._read_data(
-            tag_cache, start, finish,
-            (Order.CN_DESC if count is not None and start is None else Order.CN_ASC),
-            count, True, True, None
-        )
-        if not tag_data:
-            return []
+        tags_by_type = {
+            0: [],
+            1: [],
+            2: [],
+            4: []
+        }
+        tag_params = None
 
-        now_ms = t.ts()
-        x0 = tag_data[0][1]
-        y0 = tag_data[0][0]
+        t1 = time.time()
+        for tag_id in tag_ids:
+            tag_params = self._tags[tag_id]
+            tags_by_type[tag_params["value_type"]].append(tag_id)
 
-        if start is not None:
-            if x0 > start:
-                # Если `from_` раньше времени первой записи в выборке
-                tag_data.insert(0, (None, start, None))
+        q = []
+        t1 = time.time()
+        for key, data in tags_by_type.items():
+            if not data:
+                continue
+            tags = "','".join(data)
+            tags = f"'{tags}'"
+            q.append(
+                f"select t.\"tagId\" as tagId, array_agg(array[d.x, d.y, d.q]) as data "
+                f"from \"t_data_{key}\" as d, \"tags\" as t "
+                f"where t.\"tagId\" in ({tags}) and t.id = d.\"tagNum\" and "
+                f"x >= {start} and x <= {finish} group by tagId;"
+            )
 
-            if len(tag_data) == 1:
-                if x0 < start:
-                    tag_data[0] = (tag_data[0][0], start, tag_data[0][2])
-                    tag_data.append((y0, now_ms, tag_data[0][2]))
-                return tag_data
+        '''
+        for s in q:
+            print(f"\n{s}\n")
+        '''
+        '''
+        tags_tables = [self._tags[tag_id]["table"] for tag_id in tag_ids]
+        sub_q_tables = "','".join(tags_tables)
+        sub_q_tables = f"'{sub_q_tables}'"
+        sub_q_ids = "','".join(tag_ids)
+        sub_q_ids = f"'{sub_q_ids}'"
+        tag_params = self._tags[tag_ids[0]]
+        q = [f"select * from get_many_2(ARRAY[{sub_q_tables}], ARRAY[{sub_q_ids}], {start}, {finish})"]
+        '''
+        res = {"data": []}
+        t1 = time.time()
+        async with tag_params["ds"].acquire() as conn:
+            async with conn.transaction():
+                t1 = time.time()
+                async for r in conn.cursor(*q):
+                    data = r.get("data")
+                    for data_item in data:
+                        data_item[0]
+                    res["data"].append(dict(r))
 
-            x1, y1 = self._last_point(tag_data[1][1], tag_data)
-            if x1 == start:
-                # Если время второй записи равно `from`,
-                # то запись "перед from" не нужна
-                tag_data.pop(0)
-
-            if x0 < start < x1:
-                tag_data[0] = (tag_data[0][0], start, tag_data[0][2])
-                if tag_cache["step"]:
-                    tag_data[0] = (y0, tag_data[0][1], tag_data[0][2])
-                else:
-                    tag_data[0] = (
-                        linear_interpolated(
-                            (x0, y0), (x1, y1), start
-                        ), tag_data[0][1], tag_data[0][2]
-                    )
-
-        if finish is not None:
-            # (xn; yn) - запись "после to"
-            xn = tag_data[-1][1]
-            yn = tag_data[-1][0]
-
-            # (xn_1; yn_1) - запись перед значением `to`
-            try:
-                xn_1, yn_1 = self._last_point(tag_data[-2][1], tag_data)
-            except IndexError:
-                xn_1 = -1
-                yn_1 = None
-
-            if xn_1 == finish:
-                # Если время предпоследней записи равно `to`,
-                # то запись "после to" не нужна
-                tag_data.pop()
-
-            if xn_1 < finish < xn:
-                if tag_cache["step"]:
-                    y = yn_1
-                else:
-                    y = linear_interpolated(
-                        (xn_1, yn_1), (xn, yn), finish
-                    )
-                tag_data[-1] = (
-                    y, finish, tag_data[-2][2]
-                )
-
-            if finish > xn:
-                tag_data.append((yn, finish, tag_data[-1][2]))
-
-        if all((finish is None, now_ms > tag_data[-1][1])):
-            tag_data.append((tag_data[-1][0], now_ms, tag_data[-1][2]))
-
-        tag_data = self._limit_data(tag_data, count, start, finish)
-        return tag_data
+        return res
 
     async def _data_get_actual(self, tag_cache: dict, start: int, finish: int,
             count: int, value: Any = None):

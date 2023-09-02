@@ -151,7 +151,6 @@ class TagsAppAPI(svc.Svc):
         }
 
     async def data_get(self, payload: DataGet) -> dict:
-        print(f"DataGet: {payload}")
         if isinstance(payload, dict):
             payload = payload["data"]
             payload = DataGet(**payload)
@@ -165,11 +164,41 @@ class TagsAppAPI(svc.Svc):
             mes=body, reply=True,
         )
         '''
+        """
+        splitted_tags = np.array_split(payload.tagId, 4)
         body = {
             "action": "tags.downloadData",
             "data": payload.model_dump()
         }
-        res = await self._post_message(
+        tasks = []
+        for splitted in splitted_tags:
+            body["data"]["tagId"] = list(splitted)
+            tasks.append(
+                asyncio.create_task(
+                    self._post_message(
+                        mes=body, reply=True, routing_key="ac258e2a-b8f7-103d-9a07-6fcde61b9a51"
+                    )
+                )
+            )
+
+        done, _ = await asyncio.wait(
+            tasks, return_when=asyncio.ALL_COMPLETED
+        )
+
+        result = {
+            "data": []
+        }
+        for future in done:
+            res = future.result()
+
+            result["data"].extend(res["data"])
+        """
+
+        body = {
+            "action": "tags.downloadData",
+            "data": payload.model_dump()
+        }
+        result = await self._post_message(
             mes=body, reply=True, routing_key="ac258e2a-b8f7-103d-9a07-6fcde61b9a51"
         )
 
@@ -178,7 +207,7 @@ class TagsAppAPI(svc.Svc):
                 "data": []
             }
 
-            for tag_item in res["data"]:
+            for tag_item in result["data"]:
                 new_tag_item = {
                     "tagId": tag_item["tagId"],
                     "data": []
@@ -193,7 +222,7 @@ class TagsAppAPI(svc.Svc):
 
             return final_res
 
-        return res
+        return result
 
     async def data_set(self, payload: AllData) -> None:
         body = {

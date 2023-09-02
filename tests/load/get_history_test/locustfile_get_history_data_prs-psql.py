@@ -16,9 +16,11 @@ class DataGetHistoryUser(HttpUser):
         with open("/mnt/locust/tags_in_postgres.json", "r") as f:
             js = json.load(f)
             self.ids = js["0"]
+            '''
             self.ids += js["1"]
             self.ids += js["2"]
             self.ids += js["4"]
+            '''
 
         self.pack_size = self.environment.parsed_options.tags_in_pack
         self.start_date = self.environment.parsed_options.start

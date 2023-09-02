@@ -10,6 +10,7 @@ from locust import User, task, events
 
 from websocket import create_connection
 import time
+import times
 
 from uuid import uuid4
 
@@ -18,6 +19,7 @@ from uuid import uuid4
 class WSDataGetHistoryUser(User):
 
     def on_start(self):
+        """
         with open("/mnt/locust/tags_in_postgres.json", "r") as f:
             js = json.load(f)
             self.ids = js["0"]
@@ -33,23 +35,39 @@ class WSDataGetHistoryUser(User):
 
         self.start_date = datetime.utcfromtimestamp(1690454451).date()
         self.end_date = datetime.utcfromtimestamp(1690971801).date() - timedelta(days=1)
+        """
+        with open("/mnt/locust/tags_in_postgres.json", "r") as f:
+            js = json.load(f)
+            self.ids = js["0"]
+            '''
+            self.ids += js["1"]
+            self.ids += js["2"]
+            self.ids += js["4"]
+            '''
+
+        self.ws = websocket.WebSocket()
+        self.ws.settimeout(10)
+        self.ws.connect(self.host)
+
+        self.pack_size = self.environment.parsed_options.tags_in_pack
+        self.start_date = self.environment.parsed_options.start
+        if self.start_date:
+            self.start_date = times.ts(self.start_date)
+        self.end_date = self.environment.parsed_options.finish
+        if self.end_date:
+            self.end_date = times.ts(self.end_date)
 
     @task
     def get_data(self):
         tags = random.sample(self.ids, self.pack_size)
 
-        delta = self.end_date - self.start_date
-        random_date = self.start_date + timedelta(days=random.randint(0, delta.days))
-        start = random_date.isoformat()
-        end = (random_date + timedelta(days=1)).isoformat()
-
         data = {
-        "action": "get",
-        "data": {
-        "tagId": tags,
-        "start": start,
-        "finish": end
-        } 
+            "action": "get",
+            "data": {
+                "tagId": tags,
+                "start": self.start_date,
+                "finish": self.end_date
+            }
         }
 
         e = None
