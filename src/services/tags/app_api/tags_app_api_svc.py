@@ -165,8 +165,10 @@ class TagsAppAPI(svc.Svc):
             mes=body, reply=True,
         )
         '''
-        """
-        splitted_tags = np.array_split(payload.tagId, 4)
+        if len(payload.tagId) > 10:
+            splitted_tags = np.array_split(payload.tagId, 4)
+        else:
+            splitted_tags = [payload.tagId]
         body = {
             "action": "tags.downloadData",
             "data": payload.model_dump()
@@ -193,8 +195,9 @@ class TagsAppAPI(svc.Svc):
             res = future.result()
 
             result["data"].extend(res["data"])
-        """
 
+
+        """
         body = {
             "action": "tags.downloadData",
             "data": payload.model_dump()
@@ -202,6 +205,7 @@ class TagsAppAPI(svc.Svc):
         result = await self._post_message(
             mes=body, reply=True, routing_key="ac258e2a-b8f7-103d-9a07-6fcde61b9a51"
         )
+        """
 
         if payload.format:
             final_res = {
