@@ -1011,11 +1011,10 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         for tag_id in tags:
             queries.append(
                 f"(select '{tag_id}' as tagId, d.x, d.y, d.q from \"t_data_0\" as d, \"tags\" as t "
-                f"where d.\"tagNum\" = t.id and t.\"tagId\" = '{tag_id}' and x <= {finish} order by d.id desc limit 1) "
+                f"where d.\"tagNum\" = (select id from \"tags\" where \"tagId\" = '{tag_id}') and x <= {finish} order by d.id desc limit 1) "
                 f"union "
                 f"(select '{tag_id}' as tagId, d.x, d.y, d.q from \"t_data_0\" as d, \"tags\" as t "
-                f"where d.\"tagNum\" = t.id and t.\"tagId\" = '{tag_id}' and x >= {finish} order by d.id desc limit 1) "
-
+                f"where d.\"tagNum\" = (select id from \"tags\" where \"tagId\" = '{tag_id}') and x >= {finish} order by d.id desc limit 1) "
             )
 
         queries = [" union ".join(queries) + " order by tagId, x;"]
@@ -1025,13 +1024,10 @@ class DataStoragesAppPostgreSQL(svc.Svc):
             "data": []
         }
 
-        print(queries)
-
         async with tag_params["ds"].acquire() as conn:
             async with conn.transaction():
                 prev_tag_id = None
                 async for r in conn.cursor(*queries):
-                    print(f"r: {r}")
                     tag_id = r.get("tagId")
                     if prev_tag_id:
                         if tag_id != prev_tag_id:
