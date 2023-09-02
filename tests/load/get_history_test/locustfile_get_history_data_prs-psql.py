@@ -24,20 +24,18 @@ class DataGetHistoryUser(HttpUser):
 
         self.pack_size = self.environment.parsed_options.tags_in_pack
         self.start_date = self.environment.parsed_options.start
+        self.payload = {
+            "tagId": []
+        }
         if self.start_date:
-            self.start_date = times.ts(self.start_date)
+            self.payload["start"] = times.ts(self.start_date)
         self.end_date = self.environment.parsed_options.finish
         if self.end_date:
-            self.end_date = times.ts(self.end_date)
+            self.payload["finish"] = times.ts(self.end_date)
+
 
     @task
     def get_data(self):
-        tags = random.sample(self.ids, self.pack_size)
+        self.payload["tagId"] = random.sample(self.ids, self.pack_size)
 
-        data = {"tagId": tags}
-        if self.start_date:
-            data["start"] = self.start_date
-        if self.end_date:
-            data["finish"] = self.end_date
-
-        self.client.get("", json=data)
+        self.client.get("", json=self.payload)

@@ -1006,17 +1006,16 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         """
         q = ""
         tag_params = None
-        #print(f"tags: {tags}")
         queries = []
+        tag_params = self._tags.get(tags[0])
         for tag_id in tags:
-            tag_params = self._tags.get(tag_id)
-            if tag_params is None:
-                self._logger.error(f"Тег {tag_id} не привязан к хранилищу.")
-                continue
-            table = tag_params["table"]
             queries.append(
-                f"(select '{tag_id}' as tagId, x, y, q from \"{table}\" where x <= {finish} order by id desc limit 1) "
-                f"union (select '{tag_id}' as tagId, x, y, q from \"{table}\" where x >= {finish} order by id limit 1) "
+                f"(select '{tag_id}' as tagId, d.x, d.y, d.q from \"t_data_0\" as d, \"tags\" as t "
+                f"where d.\"tagNum\" = t.id and t.\"tagId\" = '{tag_id}' and x <= {finish} order by d.id desc limit 1) "
+                f"union "
+                f"(select '{tag_id}' as tagId, d.x, d.y, d.q from \"t_data_0\" as d, \"tags\" as t "
+                f"where d.\"tagNum\" = t.id and t.\"tagId\" = '{tag_id}' and x >= {finish} order by d.id desc limit 1) "
+
             )
 
         queries = [" union ".join(queries) + " order by tagId, x;"]
@@ -1025,10 +1024,14 @@ class DataStoragesAppPostgreSQL(svc.Svc):
         data = {
             "data": []
         }
+
+        print(queries)
+
         async with tag_params["ds"].acquire() as conn:
             async with conn.transaction():
                 prev_tag_id = None
                 async for r in conn.cursor(*queries):
+                    print(f"r: {r}")
                     tag_id = r.get("tagId")
                     if prev_tag_id:
                         if tag_id != prev_tag_id:

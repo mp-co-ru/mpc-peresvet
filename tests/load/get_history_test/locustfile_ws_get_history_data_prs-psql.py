@@ -51,28 +51,25 @@ class WSDataGetHistoryUser(User):
 
         self.pack_size = self.environment.parsed_options.tags_in_pack
         self.start_date = self.environment.parsed_options.start
+        self.end_date = self.environment.parsed_options.finish
+
+        self.payload = {
+            "action": "get",
+            "data": {}
+        }
         if self.start_date:
-            self.start_date = times.ts(self.start_date)
+            self.payload["data"]["start"] = times.ts(self.start_date)
         self.end_date = self.environment.parsed_options.finish
         if self.end_date:
-            self.end_date = times.ts(self.end_date)
+            self.payload["data"]["finish"] = times.ts(self.end_date)
 
     @task
     def get_data(self):
-        tags = random.sample(self.ids, self.pack_size)
-
-        data = {
-            "action": "get",
-            "data": {
-                "tagId": tags,
-                "start": self.start_date,
-                "finish": self.end_date
-            }
-        }
+        self.payload["data"]["tagId"] = random.sample(self.ids, self.pack_size)
 
         e = None
         try:
-            json_data = json.dumps(data)
+            json_data = json.dumps(self.payload)
 
             start_time = time.time()
 
