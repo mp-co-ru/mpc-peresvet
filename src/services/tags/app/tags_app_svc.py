@@ -4,6 +4,7 @@
 """
 import sys
 import copy
+import random
 
 sys.path.append(".")
 
@@ -25,6 +26,7 @@ class TagsApp(svc.Svc):
 
     def __init__(self, settings: TagsAppSettings, *args, **kwargs):
         super().__init__(settings, *args, **kwargs)
+        self.cache_data = {}
 
     def _set_incoming_commands(self) -> dict:
         return {
@@ -58,12 +60,23 @@ class TagsApp(svc.Svc):
             )
             final_res["data"] += res["data"]
         """
+        """
         mes["action"] = "tags.downloadData"
         res = await self._post_message(mes,
             reply=True,
             routing_key="ac258e2a-b8f7-103d-9a07-6fcde61b9a51"
         )
         #final_res["data"] += res["data"]
+        """
+        tag_ids = mes["data"]["tagId"]
+        res = {
+            "data": []
+        }
+        for tag_id in tag_ids:
+            res["data"].append({
+                "tagId": tag_id,
+                "data": self.cache_data[tag_id]
+            })
 
         return res
 
