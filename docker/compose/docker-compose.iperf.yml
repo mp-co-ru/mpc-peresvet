@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+
+  tcp-5001:
+    hostname: iperf_server
+    image: iitgdocker/iperf-server:latest
+    ports:
+      - "5001:5001"
+    command: iperf -s
+    volumes:
+      - ./logs/iperf-server:/data
+    #environment:
+      #- ARGS="--format m --print_mss --nodelay"
+      #- TCP_WINDOW_SIZE="43K"
+  tcp-5002:
+    hostname: iperf_client
+    image: iitgdocker/iperf-web:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./logs/iperf-client:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    #environment:
+      #- ARGS="--format m --print_mss --nodelay"
+      #- TCP_WINDOW_SIZE="43K"
