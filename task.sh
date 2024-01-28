@@ -1,3 +1,3 @@
 echo "dfgerfgr"
-echo "dfgerfgr"
-echo "dfgerfgr"
+echo "string1"
+echo "string2"
