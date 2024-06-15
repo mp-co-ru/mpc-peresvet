@@ -31,8 +31,10 @@ def valid_uuid(id: str | list[str]) -> str | list[str]:
 class ErrorHandler:
     async def handle_error(self,res):
         if res is not None:
-            if "error" in res:
+            if ("error" in res) and ("code" in res["error"]) and ("message" in res["error"]):
                 raise HTTPException(status_code=res["error"]["code"], detail=res["error"]["message"])
+            elif ("error" in res):
+                raise HTTPException(status_code=400, detail=res["error"])
 
 
 class NodeAttributes(BaseModel):
