@@ -8,19 +8,19 @@ services:
     hostname: ${HOST_GRAFANA}
     restart: unless-stopped
     environment:
-      - GF_RENDERING_SERVER_URL=http://renderer:8081/render
-      - GF_RENDERING_CALLBACK_URL=http://${HOST_GRAFANA}:3000/
+      - GF_RENDERING_SERVER_URL=http://${HOST_GRAFANA_RENDERER}:${PORT_GRAFANA_RENDERER}/render
+      - GF_RENDERING_CALLBACK_URL=http://${HOST_GRAFANA}:${PORT_GRAFANA}/
       - GF_LOG_FILTERS=rendering:debug
     volumes:
       - 'grafana_storage:/var/lib/grafana'
     ports:
-      - 3000:3000
+      - ${PORT_GRAFANA}:${PORT_GRAFANA}
     
   renderer:
     image: grafana/grafana-image-renderer:latest
-    hostname: renderer
+    hostname: ${HOST_GRAFANA_RENDERER}
     ports:
-      - 8081
+      - ${PORT_GRAFANA_RENDERER}:${PORT_GRAFANA_RENDERER}
 
 volumes:
   grafana_storage: {}
