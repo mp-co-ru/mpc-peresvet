@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   psql:
     hostname: ${HOST_POSTGRES}
@@ -11,3 +9,9 @@ services:
       TZ: ${TIME_ZONE}
     ports:
       - 5432:5432
+    networks:
+      - peresvet
+
+networks:
+  peresvet:
+    driver: bridge

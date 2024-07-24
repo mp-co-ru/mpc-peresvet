@@ -54,3 +54,8 @@ upstream pandas_app_api {
 upstream grafana {
     server ${HOST_GRAFANA}:${PORT_GRAFANA};
 }
+
+#renderer
+#upstream renderer {
+#    server ${HOST_GRAFANA_RENDERER}:${PORT_GRAFANA_RENDERER};
+#}

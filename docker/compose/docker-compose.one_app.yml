@@ -10,3 +10,10 @@ services:
 
     environment:
       TZ: ${TIME_ZONE}
+
+    networks:
+      - peresvet
+
+networks:
+  peresvet:
+    driver: bridge

@@ -3,24 +3,39 @@ services:
     #build:
     #  context: ../..
     #  dockerfile: docker/docker-files/grafana/Dockerfile.grafana
+    #  args:
+    #    HOST: ${NGINX_HOST}
     image: grafana/grafana-enterprise:10.4.4-ubuntu
     container_name: grafana
     hostname: ${HOST_GRAFANA}
     restart: unless-stopped
     environment:
+      - TZ=${TIME_ZONE}
+      - GF_SERVER_DOMAIN=${NGINX_HOST}
+      - GF_SERVER_ROOT_URL=http://${NGINX_HOST}:${PORT_GRAFANA}/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_RENDERING_SERVER_URL=http://${HOST_GRAFANA_RENDERER}:${PORT_GRAFANA_RENDERER}/render
-      - GF_RENDERING_CALLBACK_URL=http://${HOST_GRAFANA}:${PORT_GRAFANA}/
-      - GF_LOG_FILTERS=rendering:debug
+      - GF_RENDERING_CALLBACK_URL=http://${HOST_GRAFANA}:${PORT_GRAFANA}/grafana/
+      - GF_RENDERING_RENDERER_TOKEN=-
+      - GF_LOG_FILTERS=rendering:debug   
     volumes:
       - 'grafana_storage:/var/lib/grafana'
     ports:
       - ${PORT_GRAFANA}:${PORT_GRAFANA}
+    networks:
+      - peresvet
     
   renderer:
     image: grafana/grafana-image-renderer:latest
     hostname: ${HOST_GRAFANA_RENDERER}
     ports:
       - ${PORT_GRAFANA_RENDERER}:${PORT_GRAFANA_RENDERER}
+    networks:
+      - peresvet
 
 volumes:
   grafana_storage: {}
+
+networks:
+  peresvet:
+    driver: bridge
